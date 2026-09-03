@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.idea
+.vscode
+.env
+.env.*
+coverage
+*.log
+**/node_modules
+**/dist
+**/.git
+**/.env
+**/.env.*
+**/coverage
+**/*.log

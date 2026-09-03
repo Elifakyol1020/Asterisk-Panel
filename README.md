@@ -1,15 +1,41 @@
-# Asterisk Backend
+# Asterisk
+
+## Proje dizini
+
+```text
+asterisk/
+├── backend/             # Spring Boot, Maven, mapper'lar ve backend Dockerfile
+├── frontend/            # Frontend kodlarının ekleneceği klasör
+├── docker-compose.yml   # Frontend, backend, PostgreSQL ve pgAdmin
+├── .env                 # Yerel ayarlar (Git'e eklenmez)
+└── .env.example
+```
+
+Frontend uygulaması `frontend/asterisk-frontend/` içine eklendi. `frontend/` içindeki Dockerfile ve Nginx
+ayarları, npm kullanan ve `dist/` çıktısı üreten Vite tabanlı bir uygulama için
+hazırdır. Kodları ekleme adımları [frontend/README.md](frontend/README.md) dosyasındadır.
 
 ## Çalıştırma
 
-Proje kökünde:
+Yalnızca backend ve veritabanı araçlarını başlatmak için proje kökünde:
 
 ```powershell
+docker compose up -d --build backend pgadmin
+```
+
+Bu komut backend, PostgreSQL ve pgAdmin'i başlatır.
+Frontend dahil tüm servisler için:
+
+```powershell
+docker compose config --quiet
 docker compose up -d --build
 ```
 
-Bu komut backend, PostgreSQL ve pgAdmin'i başlatır. Ek profil veya environment dosyası seçilmez.
+Ek profil veya environment dosyası seçilmez. Frontend image'ının build edilmesi
+için `frontend/asterisk-frontend/package.json`, `frontend/asterisk-frontend/package-lock.json` ve uygulama kaynakları
+bulunmalıdır. Frontend API temel adresi `/api` olmalıdır.
 
+- Frontend: http://localhost:3000
 - Swagger: http://localhost:8080/swagger-ui/index.html
 - API: http://localhost:8080/api
 - PostgreSQL: localhost:5433
@@ -22,6 +48,11 @@ Bu komut backend, PostgreSQL ve pgAdmin'i başlatır. Ek profil veya environment
 Tüm ayarlar proje kökündeki **.env** dosyasındadır. Git'e eklenmez.
 Yeni checkout için .env.example dosyasını .env olarak kopyalayıp boş parola ve secret
 alanlarını doldur. JWT_SECRET en az 32 byte rastgele bir değer olmalıdır.
+
+`FRONTEND_PORT` varsayılan olarak 3000'dir. `SERVER_PORT`, Docker kullanırken
+backend'in bilgisayardaki portunu belirler; container içinde backend daima 8080
+portunda çalışır. Compose, frontend'in localhost adresini mevcut CORS listesine
+ekler. Mevcut `.env` dosyası ve veritabanı volume adları korunmuştur.
 
 Swagger'da POST /api/auth/login için APP_BOOTSTRAP_EMAIL ve
 APP_BOOTSTRAP_PASSWORD değerlerini kullan. DB_PASSWORD veritabanı bağlantısı içindir.
@@ -59,11 +90,19 @@ pgAdmin ayarları ayrı bir Docker volume'unda saklanır.
 
 ## Dosyalar
 
-- **docker-compose.yml:** backend, PostgreSQL ve pgAdmin servisleri, portlar ve kalıcı veriler.
-- **Dockerfile:** Java 21 ile build/test ve uygulama image'ı.
+- **docker-compose.yml:** frontend, backend, PostgreSQL ve pgAdmin servisleri, portlar ve kalıcı veriler.
+- **backend/Dockerfile:** Java 21 ile build/test ve uygulama image'ı.
+- **frontend/Dockerfile:** frontend build'i ve Nginx image'ı.
+- **frontend/nginx.conf:** SPA sayfaları ve `/api` isteklerinin backend'e yönlendirilmesi.
 - **.env:** DB, JWT, port, CORS ve ilk admin ayarları.
-- **src/main/resources/application.yml:** Spring ayarları.
-- **src/main/resources/schema.sql:** ilk boş veritabanında tabloları oluşturan SQL.
+- **backend/src/main/resources/application.yml:** Spring ayarları.
+- **backend/src/main/resources/schema.sql:** ilk boş veritabanında tabloları oluşturan SQL.
+
+IntelliJ'de `backend/pom.xml` dosyasını Maven projesi olarak yükle. Backend'i
+IDE'den çalıştırırken kökteki `.env` dosyasının bulunabilmesi için Run Configuration
+içindeki Working directory değerini `asterisk/` kök dizini yap.
+Maven testlerini proje kökünden `backend\mvnw.cmd -f backend/pom.xml test` ile
+çalıştırabilirsin (Java 21 veya uyumlu bir JDK gerekir).
 
 schema.sql sadece PostgreSQL'in ilk kurulumu sırasında Compose tarafından yüklenir.
 Backend tabloları otomatik değiştirmez; Hibernate validate kullanır.
@@ -81,17 +120,24 @@ docker compose down
 down veritabanındaki kayıtları korur. .env değişikliğinden sonra:
 
 ```powershell
-docker compose up -d --force-recreate
+docker compose up -d --force-recreate backend pgadmin
 ```
 
 .env içindeki DB veya admin parolasını değiştirmek mevcut veritabanı/kullanıcının
 parolasını kendiliğinden değiştirmez.
 
+Kod değişiklikleri için `docker compose up -d --build`
+çalıştır. Bu kurulum derlenmiş frontend'i sunar; canlı yenileme içermez.
+`docker compose down -v` veritabanı volume'larını da siler; verileri korumak için
+`docker compose down` kullan.
+
 ## Kod düzeni
 
-Tüm sınıflar com.netgsm.asterisk altında controller, service, repository, entity,
-dto, enums, config, security, exception ve response paketlerinde katmanlarına göre bulunur.
+Backend sınıfları backend/src/main/java/com/netgsm/asterisk altında controller,
+service, mapper, repository, entity, dto, enums, config, security, exception ve
+response paketlerinde katmanlarına göre bulunur.
 Akış: Controller → Service → Repository.
+Request/entity/response dönüşümleri mapper paketindedir.
 
 ## Yetkiler
 
