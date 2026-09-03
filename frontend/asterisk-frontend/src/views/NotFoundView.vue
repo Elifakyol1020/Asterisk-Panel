@@ -1,0 +1,1 @@
+<template><main class="empty-state" style="padding-top:20vh"><p class="eyebrow">404</p><h1>Bu sayfayı bulamadık.</h1><p>Adres değişmiş veya hatalı yazılmış olabilir.</p><RouterLink to="/" class="button button-primary">Ana sayfaya dön</RouterLink></main></template>
