@@ -2,7 +2,7 @@ package com.netgsm.asterisk.service;
 import com.netgsm.asterisk.dto.TenantRequest;
 import com.netgsm.asterisk.dto.TenantResponse;
 import com.netgsm.asterisk.entity.Tenant;
-import com.netgsm.asterisk.entity.TenantStatus;
+import com.netgsm.asterisk.enums.TenantStatus;
 import com.netgsm.asterisk.repository.TenantRepository;
 import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
@@ -24,7 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantService {
     private final TenantRepository repository;
     @Transactional(readOnly = true)
-    public Page<TenantResponse> list(Pageable page) { return repository.findAll(page).map(TenantResponse::from); }
+    public Page<TenantResponse> list(Pageable page) {
+        var allowed = java.util.Set.of("id", "name", "code", "status", "createdAt", "updatedAt");
+        if (page.getSort().stream().anyMatch(order -> !allowed.contains(order.getProperty()))) {
+            throw new PlatformException(400, "INVALID_SORT",
+                    "Invalid sort. Use name,asc or id,desc without JSON brackets. Allowed fields: id, name, code, status, createdAt, updatedAt");
+        }
+        return repository.findAll(page).map(TenantResponse::from);
+    }
     @Transactional(readOnly = true)
     public TenantResponse get(Long id) { return TenantResponse.from(find(id)); }
     public TenantResponse create(TenantRequest request) {

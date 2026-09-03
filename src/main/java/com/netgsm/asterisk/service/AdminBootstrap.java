@@ -1,6 +1,6 @@
 package com.netgsm.asterisk.service;
 import com.netgsm.asterisk.config.BootstrapProperties;
-import com.netgsm.asterisk.entity.Role;
+import com.netgsm.asterisk.enums.Role;
 import com.netgsm.asterisk.entity.User;
 import com.netgsm.asterisk.repository.UserRepository;
 import java.nio.charset.StandardCharsets;

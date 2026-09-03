@@ -2,7 +2,7 @@ package com.netgsm.asterisk.service;
 import com.netgsm.asterisk.dto.CreateUserRequest;
 import com.netgsm.asterisk.dto.UpdateUserRequest;
 import com.netgsm.asterisk.dto.UserResponse;
-import com.netgsm.asterisk.entity.Role;
+import com.netgsm.asterisk.enums.Role;
 import com.netgsm.asterisk.entity.User;
 import com.netgsm.asterisk.repository.UserRepository;
 import com.netgsm.asterisk.exception.AsteriskConfigurationException;

@@ -5,9 +5,9 @@ import com.netgsm.asterisk.dto.LoginResponse;
 import com.netgsm.asterisk.service.JwtService;
 import com.netgsm.asterisk.exception.InvalidCredentialsException;
 import com.netgsm.asterisk.security.CurrentUser;
-import com.netgsm.asterisk.entity.TenantStatus;
+import com.netgsm.asterisk.enums.TenantStatus;
 import com.netgsm.asterisk.repository.TenantRepository;
-import com.netgsm.asterisk.entity.Role;
+import com.netgsm.asterisk.enums.Role;
 import com.netgsm.asterisk.entity.User;
 import com.netgsm.asterisk.repository.UserRepository;
 import java.util.Locale;
@@ -28,11 +28,10 @@ public class AuthService {
         dummyHash = passwords.encode(java.util.UUID.randomUUID().toString());
     }
     public LoginResponse login(LoginRequest request) {
-        var user = users.findByUsername(request.username().trim().toLowerCase(Locale.ROOT)).orElse(null);
+        var user = users.findByEmail(request.email().trim().toLowerCase(Locale.ROOT)).orElse(null);
         boolean matches = passwords.matches(request.password(), user == null ? dummyHash : user.getPasswordHash());
         if (!matches || user == null || !active(user)) throw new InvalidCredentialsException();
-        return new LoginResponse(tokens.issue(user), "Bearer",
-                new LoginResponse.UserInfo(user.getId(), user.getUsername(), user.getRole(), user.getTenantId()));
+        return new LoginResponse(tokens.issue(user), "Bearer");
     }
     public CurrentUser authenticate(Jwt jwt) {
         Long id = Long.valueOf(jwt.getSubject());

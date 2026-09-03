@@ -12,9 +12,9 @@ import com.netgsm.asterisk.repository.QueueMemberRepository;
 import com.netgsm.asterisk.repository.QueueRepository;
 import com.netgsm.asterisk.repository.ExtensionRepository;
 import com.netgsm.asterisk.entity.Tenant;
-import com.netgsm.asterisk.entity.TenantStatus;
+import com.netgsm.asterisk.enums.TenantStatus;
 import com.netgsm.asterisk.repository.TenantRepository;
-import com.netgsm.asterisk.entity.Role;
+import com.netgsm.asterisk.enums.Role;
 import com.netgsm.asterisk.entity.User;
 import com.netgsm.asterisk.repository.UserRepository;
 import org.junit.jupiter.api.*;
@@ -54,6 +54,7 @@ class PlatformApiTests {
     @Autowired IvrRepository ivrs;
     @Autowired IvrOptionRepository options;
     @Autowired ExtensionRepository extensions;
+    @Autowired org.springframework.context.ApplicationContext context;
     Tenant first, second;
     User admin, firstAdmin, secondAdmin;
     String passwordHash;
@@ -69,24 +70,93 @@ class PlatformApiTests {
     }
     @Test void loginIssuesTenantClaimsAndNeverExposesPasswordHash() throws Exception {
         var result = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(Map.of("username", "first-admin", "password", "test-password-123"))))
+                .content(json.writeValueAsString(Map.of("email", "FIRST-ADMIN@test.invalid", "password", "test-password-123"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.user.tenantId").value(first.getId()))
+                .andExpect(jsonPath("$.user").doesNotExist())
                 .andExpect(jsonPath("$.user.passwordHash").doesNotExist()).andReturn();
         String token = json.readTree(result.getResponse().getContentAsString()).get("accessToken").asString();
+        assertThat(json.readTree(result.getResponse().getContentAsString()).size()).isEqualTo(2);
         assertThat(jwt.decode(token).getClaimAsString("role")).isEqualTo("TENANT_ADMIN");
         assertThat(jwt.decode(token).getClaimAsString("userId")).isEqualTo(firstAdmin.getId().toString());
+        assertThat(jwt.decode(token).getClaimAsString("tenantId")).isEqualTo(first.getId().toString());
+    }
+    @Test void usernameCannotBeUsedForLogin() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("username", "root", "password", "test-password-123"))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("email", "root", "password", "test-password-123"))))
+                .andExpect(status().isBadRequest());
+    }
+    @Test void emailIsUniqueAcrossTenantsOnCreateAndUpdate() throws Exception {
+        var duplicateEmail = firstAdmin.getEmail().toUpperCase(java.util.Locale.ROOT);
+        var body = json.writeValueAsString(Map.of("username", "another-admin", "email", duplicateEmail,
+                "password", "test-password-123", "enabled", true));
+        mvc.perform(post("/api/admin/tenants/" + second.getId() + "/users")
+                .header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict());
+        mvc.perform(put("/api/admin/users/" + secondAdmin.getId())
+                .header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isConflict());
+        assertThat(users.findById(secondAdmin.getId()).orElseThrow().getEmail()).isEqualTo("second-admin@test.invalid");
     }
     @Test void wrongPasswordAndMissingUserHaveSameResponse() throws Exception {
-        for (String username : new String[]{"first-admin", "missing"})
+        for (String email : new String[]{"first-admin@test.invalid", "missing@test.invalid"})
             mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                    .content(json.writeValueAsString(Map.of("username", username, "password", "wrong"))))
+                    .content(json.writeValueAsString(Map.of("email", email, "password", "wrong"))))
                     .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.message").value("Invalid credentials"));
     }
     @Test void anonymousAndTenantAdminCannotManageTenants() throws Exception {
         mvc.perform(get("/api/admin/tenants")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/admin/tenants").header("Authorization", bearer(firstAdmin))).andExpect(status().isForbidden());
         mvc.perform(get("/api/admin/tenants").header("Authorization", bearer(admin))).andExpect(status().isOk());
+    }
+    @Test void tenantSortingRejectsSwaggerPlaceholderAndAcceptsValidFields() throws Exception {
+        for (String sort : new String[]{"string", "[\"string\"]", "[\"name,asc\"]", "name,wrong"}) {
+            mvc.perform(get("/api/admin/tenants").param("sort", sort).header("Authorization", bearer(admin)))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("INVALID_SORT"));
+        }
+        mvc.perform(get("/api/admin/tenants").param("sort", "name,desc").header("Authorization", bearer(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].name").value("second"));
+    }
+    @Test void methodSecurityRejectsUnassignedRolesForPbxServices() {
+        var security = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+        security.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "unassigned", null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_VIEWER"))));
+        org.springframework.security.core.context.SecurityContextHolder.setContext(security);
+        var page = org.springframework.data.domain.PageRequest.of(0, 20);
+        try {
+            java.util.List<Runnable> calls = java.util.List.of(
+                () -> context.getBean(com.netgsm.asterisk.service.EndpointService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.TrunkService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.QueueService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.QueueMemberService.class).list(1L, page),
+                () -> context.getBean(com.netgsm.asterisk.service.IvrService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.IvrOptionService.class).list(1L, page),
+                () -> context.getBean(com.netgsm.asterisk.service.ExtensionService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.DialplanService.class).list(null, page),
+                () -> context.getBean(com.netgsm.asterisk.service.EndpointService.class).create(null),
+                () -> context.getBean(com.netgsm.asterisk.service.EndpointService.class).update(1L, null),
+                () -> context.getBean(com.netgsm.asterisk.service.EndpointService.class).delete(1L));
+            calls.forEach(call -> org.assertj.core.api.Assertions.assertThatThrownBy(call::run)
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class));
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+    @Test void tenantAdminCannotCallAdminServicesDirectly() {
+        var security = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+        security.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "tenant-admin", null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_TENANT_ADMIN"))));
+        org.springframework.security.core.context.SecurityContextHolder.setContext(security);
+        try {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> context.getBean(com.netgsm.asterisk.service.TenantService.class).get(first.getId()))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> context.getBean(com.netgsm.asterisk.service.UserService.class).get(firstAdmin.getId()))
+                    .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
     }
     @Test void tokenCannotBeTamperedWithOrExpired() throws Exception {
         String token = jwt.issue(firstAdmin);
@@ -165,9 +235,9 @@ class PlatformApiTests {
         assertThat(options.count()).isZero(); assertThat(extensions.count()).isZero();
     }
     @Test void validationErrorsDoNotEchoSensitiveInput() throws Exception {
-        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"\",\"password\":\"\"}"))
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"\",\"password\":\"\"}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors.username").exists());
+                .andExpect(jsonPath("$.errors.email").exists());
     }
     @Test void userPasswordIsHashedAndUpdatesRevokeTokens() throws Exception {
         String oldToken = bearer(firstAdmin);
@@ -210,3 +280,4 @@ class PlatformApiTests {
         return json.writeValueAsString(Map.of("tenantId", tenantId, "extension", "1001", "displayName", "test", "transport", "transport-udp", "codecs", "ulaw", "enabled", true, "password", "sip-password-123"));
     }
 }
+

@@ -24,8 +24,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 @Service @RequiredArgsConstructor @Slf4j @Transactional
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
 public class QueueMemberService {
     private final QueueRepository queues;
     private final QueueMemberRepository members;

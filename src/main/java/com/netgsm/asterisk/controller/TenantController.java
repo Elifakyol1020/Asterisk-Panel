@@ -7,10 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springdoc.core.annotations.ParameterObject;
 @RestController @RequestMapping("/api/admin/tenants") @RequiredArgsConstructor
 public class TenantController {
     private final TenantService service;
-    @GetMapping public Page<TenantResponse> list(Pageable page) { return service.list(page); }
+    @io.swagger.v3.oas.annotations.Parameter(name = "sort", description = "İsteğe bağlı. Örnek: name,asc veya id,desc. JSON köşeli parantezleri ve tırnak kullanmayın; sıralama istemiyorsanız boş bırakın. Alanlar: id, name, code, status, createdAt, updatedAt.")
+    @GetMapping public Page<TenantResponse> list(@ParameterObject Pageable page) { return service.list(page); }
     @GetMapping("/{id}") public TenantResponse get(@PathVariable Long id) { return service.get(id); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public TenantResponse create(@Valid @RequestBody TenantRequest request) { return service.create(request); }

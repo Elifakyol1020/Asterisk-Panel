@@ -1,6 +1,6 @@
 package com.netgsm.asterisk.dto;
 import jakarta.validation.constraints.*;
-public record LoginRequest(@NotBlank @Size(max = 80) String username,
+public record LoginRequest(@NotBlank @Email @Size(max = 254) String email,
                            @NotBlank @Size(max = 72) String password) {
     @Override public String toString() { return "LoginRequest[REDACTED]"; }
 }

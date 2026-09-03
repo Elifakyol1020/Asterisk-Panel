@@ -1,4 +1,5 @@
 package com.netgsm.asterisk.entity;
+import com.netgsm.asterisk.enums.Role;
 
 import com.netgsm.asterisk.entity.BaseEntity;
 import jakarta.persistence.*;

@@ -1,5 +1,5 @@
 package com.netgsm.asterisk.dto;
-import com.netgsm.asterisk.entity.Role;
+import com.netgsm.asterisk.enums.Role;
 import com.netgsm.asterisk.entity.User;
 import java.time.Instant;
 public record UserResponse(Long id, Long tenantId, String username, String email, Role role, boolean enabled,

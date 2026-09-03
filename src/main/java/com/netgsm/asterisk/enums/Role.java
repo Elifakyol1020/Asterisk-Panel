@@ -1,2 +1,2 @@
-package com.netgsm.asterisk.entity;
+package com.netgsm.asterisk.enums;
 public enum Role { SUPER_ADMIN, TENANT_ADMIN }
