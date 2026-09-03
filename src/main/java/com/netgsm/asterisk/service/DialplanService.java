@@ -4,7 +4,6 @@ import com.netgsm.asterisk.dto.DialplanResponse;
 import com.netgsm.asterisk.dto.UpdateDialplanRequest;
 import com.netgsm.asterisk.entity.Dialplan;
 import com.netgsm.asterisk.repository.DialplanRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -26,7 +25,6 @@ public class DialplanService {
     private final DialplanRepository repository;
     private final CurrentUserService current;
     private final com.netgsm.asterisk.service.ReferenceService references;
-    private final com.netgsm.asterisk.service.AsteriskRealtimeService realtime;
     @Transactional(readOnly = true)
     public Page<DialplanResponse> list(Long requestedTenantId, Pageable page) {
         Long tenantId = current.tenantForList(requestedTenantId);
@@ -47,7 +45,6 @@ public class DialplanService {
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.saveAndFlush(entity);
-        realtime.save(entity);
         log.info("Dialplan created id={} tenantId={}", entity.getId(), tenantId);
         return DialplanResponse.from(entity);
     }
@@ -64,7 +61,6 @@ public class DialplanService {
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.flush();
-        realtime.save(entity);
         log.info("Dialplan updated id={} tenantId={}", id, tenantId);
         return DialplanResponse.from(entity);
     }
@@ -72,7 +68,6 @@ public class DialplanService {
         Dialplan entity = find(id);
         current.tenantForCreate(entity.getTenantId());
         references.requireUnreferenced("DIALPLAN", id);
-        realtime.delete(entity);
         repository.delete(entity); repository.flush();
         log.info("Dialplan deleted id={} tenantId={}", id, entity.getTenantId());
     }

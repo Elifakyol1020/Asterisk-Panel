@@ -4,7 +4,6 @@ import com.netgsm.asterisk.dto.ExtensionResponse;
 import com.netgsm.asterisk.dto.UpdateExtensionRequest;
 import com.netgsm.asterisk.entity.Extension;
 import com.netgsm.asterisk.repository.ExtensionRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

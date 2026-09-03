@@ -4,7 +4,6 @@ import com.netgsm.asterisk.dto.EndpointResponse;
 import com.netgsm.asterisk.dto.UpdateEndpointRequest;
 import com.netgsm.asterisk.entity.Endpoint;
 import com.netgsm.asterisk.repository.EndpointRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -27,7 +26,6 @@ public class EndpointService {
     private final CurrentUserService current;
     private final com.netgsm.asterisk.service.ReferenceService references;
     private final org.springframework.security.crypto.password.PasswordEncoder passwords;
-    private final com.netgsm.asterisk.service.AsteriskRealtimeService realtime;
     @Transactional(readOnly = true)
     public Page<EndpointResponse> list(Long requestedTenantId, Pageable page) {
         Long tenantId = current.tenantForList(requestedTenantId);
@@ -49,7 +47,6 @@ public class EndpointService {
         entity.setContext(current.context(tenantId, "internal"));
         entity.setPasswordHash(hash(request.password()));
         repository.saveAndFlush(entity);
-        realtime.save(entity, request.password());
         log.info("Endpoint created id={} tenantId={}", entity.getId(), tenantId);
         return EndpointResponse.from(entity);
     }
@@ -67,7 +64,6 @@ public class EndpointService {
         entity.setContext(current.context(tenantId, "internal"));
         if (request.password() != null) entity.setPasswordHash(hash(request.password()));
         repository.flush();
-        realtime.save(entity, request.password());
         log.info("Endpoint updated id={} tenantId={}", id, tenantId);
         return EndpointResponse.from(entity);
     }
@@ -75,7 +71,6 @@ public class EndpointService {
         Endpoint entity = find(id);
         current.tenantForCreate(entity.getTenantId());
         references.requireUnreferenced("ENDPOINT", id);
-        realtime.delete(entity);
         repository.delete(entity); repository.flush();
         log.info("Endpoint deleted id={} tenantId={}", id, entity.getTenantId());
     }

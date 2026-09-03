@@ -1,7 +1,6 @@
 package com.netgsm.asterisk.service;
 import com.netgsm.asterisk.security.CurrentUser;
 
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

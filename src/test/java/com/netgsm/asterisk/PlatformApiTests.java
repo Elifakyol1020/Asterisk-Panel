@@ -54,6 +54,8 @@ class PlatformApiTests {
     @Autowired IvrRepository ivrs;
     @Autowired IvrOptionRepository options;
     @Autowired ExtensionRepository extensions;
+    @Autowired com.netgsm.asterisk.repository.TrunkRepository trunks;
+    @Autowired com.netgsm.asterisk.repository.DialplanRepository dialplans;
     @Autowired org.springframework.context.ApplicationContext context;
     Tenant first, second;
     User admin, firstAdmin, secondAdmin;
@@ -61,7 +63,7 @@ class PlatformApiTests {
 
     @BeforeEach void fixtures() {
         members.deleteAll(); options.deleteAll(); extensions.deleteAll(); queues.deleteAll();
-        ivrs.deleteAll(); endpoints.deleteAll(); users.deleteAll(); tenants.deleteAll();
+        ivrs.deleteAll(); endpoints.deleteAll(); trunks.deleteAll(); dialplans.deleteAll(); users.deleteAll(); tenants.deleteAll();
         first = tenant("first"); second = tenant("second");
         passwordHash = passwords.encode("test-password-123");
         admin = user("root", null, Role.SUPER_ADMIN);
@@ -211,13 +213,41 @@ class PlatformApiTests {
         mvc.perform(post("/api/ivrs").header("Authorization", bearer(firstAdmin)).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
         mvc.perform(post("/api/ivrs").header("Authorization", bearer(secondAdmin)).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isCreated());
     }
-    @Test void realtimeFailureRollsBackBusinessEndpoint() throws Exception {
-        mvc.perform(post("/api/endpoints").header("Authorization", bearer(firstAdmin)).contentType(MediaType.APPLICATION_JSON)
-                .content(endpointRequest(second.getId()))).andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error").value("ASTERISK_UNAVAILABLE"));
-        assertThat(endpoints.count()).isZero();
+    @Test void endpointCrudPersistsInDatabase() throws Exception {
+        assertDatabaseCrud("/api/endpoints", endpointRequest(second.getId()), endpoints);
     }
-    @Test void crossTenantQueueMemberIsRejectedBeforeRealtimeWrite() throws Exception {
+    @Test void trunkCrudPersistsInDatabase() throws Exception {
+        assertDatabaseCrud("/api/trunks", json.writeValueAsString(Map.of(
+                "name", "provider", "host", "sip.test.invalid", "port", 5060,
+                "username", "sip-user", "transport", "transport-udp", "enabled", true,
+                "password", "sip-password-123")), trunks);
+    }
+    @Test void queueCrudPersistsInDatabase() throws Exception {
+        assertDatabaseCrud("/api/queues", json.writeValueAsString(Map.of(
+                "name", "support", "strategy", "ringall", "timeout", 20, "retry", 5,
+                "wrapupTime", 0, "maxLength", 0, "musicOnHold", "default", "enabled", true)), queues);
+    }
+    @Test void dialplanCrudPersistsInDatabase() throws Exception {
+        assertDatabaseCrud("/api/dialplans", json.writeValueAsString(Map.of(
+                "extension", "2001", "priority", 1, "application", "Answer",
+                "applicationData", "", "enabled", true)), dialplans);
+    }
+    @Test void queueMemberCreateAndDeletePersistInDatabase() throws Exception {
+        Queue queue = queue(first.getId()); Endpoint endpoint = endpoint(first.getId());
+        String path = "/api/queues/" + queue.getId() + "/members";
+        var result = mvc.perform(post(path).header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "endpointId", endpoint.getId(), "penalty", 0, "paused", false))))
+                .andExpect(status().isCreated()).andReturn();
+        long id = json.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+        var saved = members.findById(id).orElseThrow();
+        assertThat(saved.getEndpointId()).isEqualTo(endpoint.getId());
+        assertThat(saved.getTenantId()).isEqualTo(first.getId());
+        mvc.perform(delete(path + "/" + id).header("Authorization", bearer(firstAdmin)))
+                .andExpect(status().isNoContent());
+        assertThat(members.existsById(id)).isFalse();
+    }
+    @Test void crossTenantQueueMemberIsRejectedBeforeDatabaseWrite() throws Exception {
         Queue queue = queue(first.getId()); Endpoint other = endpoint(second.getId());
         mvc.perform(post("/api/queues/" + queue.getId() + "/members").header("Authorization", bearer(firstAdmin))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("endpointId", other.getId(), "penalty", 0, "paused", false))))
@@ -251,6 +281,25 @@ class PlatformApiTests {
         mvc.perform(options("/api/ivrs").header("Origin", "https://test.invalid").header("Access-Control-Request-Method", "POST"))
                 .andExpect(status().isOk()).andExpect(header().string("Access-Control-Allow-Origin", "https://test.invalid"));
         mvc.perform(get("/v3/api-docs")).andExpect(status().isOk()).andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
+    }
+    private void assertDatabaseCrud(String path, String body,
+            org.springframework.data.jpa.repository.JpaRepository<?, Long> repository) throws Exception {
+        var result = mvc.perform(post(path).header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.tenantId").value(first.getId()))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist()).andReturn();
+        long id = json.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+        assertThat(repository.existsById(id)).isTrue();
+        var updated = (tools.jackson.databind.node.ObjectNode) json.readTree(body);
+        updated.put("enabled", false);
+        mvc.perform(put(path + "/" + id).header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(updated)))
+                .andExpect(status().isOk());
+        mvc.perform(get(path + "/" + id).header("Authorization", bearer(firstAdmin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.enabled").value(false));
+        mvc.perform(delete(path + "/" + id).header("Authorization", bearer(firstAdmin)))
+                .andExpect(status().isNoContent());
+        assertThat(repository.existsById(id)).isFalse();
     }
     private String bearer(User user) { return "Bearer " + jwt.issue(user); }
     private Tenant tenant(String code) {

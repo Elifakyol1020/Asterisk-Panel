@@ -6,7 +6,6 @@ import com.netgsm.asterisk.dto.QueueResponse;
 import com.netgsm.asterisk.dto.UpdateQueueRequest;
 import com.netgsm.asterisk.entity.Queue;
 import com.netgsm.asterisk.repository.QueueRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -28,7 +27,6 @@ public class QueueService {
     private final QueueRepository repository;
     private final CurrentUserService current;
     private final com.netgsm.asterisk.service.ReferenceService references;
-    private final com.netgsm.asterisk.service.AsteriskRealtimeService realtime;
     @Transactional(readOnly = true)
     public Page<QueueResponse> list(Long requestedTenantId, Pageable page) {
         Long tenantId = current.tenantForList(requestedTenantId);
@@ -51,7 +49,6 @@ public class QueueService {
         entity.setEnabled(request.enabled());
 
         repository.saveAndFlush(entity);
-        realtime.save(entity);
         log.info("Queue created id={} tenantId={}", entity.getId(), tenantId);
         return QueueResponse.from(entity);
     }
@@ -70,7 +67,6 @@ public class QueueService {
         entity.setEnabled(request.enabled());
 
         repository.flush();
-        realtime.save(entity);
         log.info("Queue updated id={} tenantId={}", id, tenantId);
         return QueueResponse.from(entity);
     }
@@ -78,7 +74,6 @@ public class QueueService {
         Queue entity = find(id);
         current.tenantForCreate(entity.getTenantId());
         references.requireUnreferenced("QUEUE", id);
-        realtime.delete(entity);
         repository.delete(entity); repository.flush();
         log.info("Queue deleted id={} tenantId={}", id, entity.getTenantId());
     }

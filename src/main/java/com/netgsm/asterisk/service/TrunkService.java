@@ -4,7 +4,6 @@ import com.netgsm.asterisk.dto.TrunkResponse;
 import com.netgsm.asterisk.dto.UpdateTrunkRequest;
 import com.netgsm.asterisk.entity.Trunk;
 import com.netgsm.asterisk.repository.TrunkRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -27,7 +26,6 @@ public class TrunkService {
     private final CurrentUserService current;
     private final com.netgsm.asterisk.service.ReferenceService references;
     private final org.springframework.security.crypto.password.PasswordEncoder passwords;
-    private final com.netgsm.asterisk.service.AsteriskRealtimeService realtime;
     @Transactional(readOnly = true)
     public Page<TrunkResponse> list(Long requestedTenantId, Pageable page) {
         Long tenantId = current.tenantForList(requestedTenantId);
@@ -52,7 +50,6 @@ public class TrunkService {
         entity.setContext(current.context(tenantId, "internal"));
         entity.setPasswordHash(hash(request.password()));
         repository.saveAndFlush(entity);
-        realtime.save(entity, request.password());
         log.info("Trunk created id={} tenantId={}", entity.getId(), tenantId);
         return TrunkResponse.from(entity);
     }
@@ -73,7 +70,6 @@ public class TrunkService {
         entity.setContext(current.context(tenantId, "internal"));
         if (request.password() != null) entity.setPasswordHash(hash(request.password()));
         repository.flush();
-        realtime.save(entity, request.password());
         log.info("Trunk updated id={} tenantId={}", id, tenantId);
         return TrunkResponse.from(entity);
     }
@@ -81,7 +77,6 @@ public class TrunkService {
         Trunk entity = find(id);
         current.tenantForCreate(entity.getTenantId());
         references.requireUnreferenced("TRUNK", id);
-        realtime.delete(entity);
         repository.delete(entity); repository.flush();
         log.info("Trunk deleted id={} tenantId={}", id, entity.getTenantId());
     }

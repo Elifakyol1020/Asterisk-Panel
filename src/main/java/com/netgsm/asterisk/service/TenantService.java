@@ -4,7 +4,6 @@ import com.netgsm.asterisk.dto.TenantResponse;
 import com.netgsm.asterisk.entity.Tenant;
 import com.netgsm.asterisk.enums.TenantStatus;
 import com.netgsm.asterisk.repository.TenantRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

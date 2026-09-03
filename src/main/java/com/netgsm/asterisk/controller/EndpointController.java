@@ -5,13 +5,15 @@ import com.netgsm.asterisk.dto.UpdateEndpointRequest;
 import com.netgsm.asterisk.service.EndpointService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/endpoints") @RequiredArgsConstructor
 public class EndpointController {
     private final EndpointService service;
-    @GetMapping public Page<EndpointResponse> list(@RequestParam(required = false) Long tenantId, Pageable page) { return service.list(tenantId, page); }
+    @io.swagger.v3.oas.annotations.Parameter(name = "sort", description = "İsteğe bağlı. Örnek: id,desc. JSON köşeli parantezleri ve tırnak kullanmayın; sıralama istemiyorsanız boş bırakın.")
+    @GetMapping public Page<EndpointResponse> list(@RequestParam(required = false) Long tenantId, @ParameterObject Pageable page) { return service.list(tenantId, page); }
     @GetMapping("/{id}") public EndpointResponse get(@PathVariable Long id) { return service.get(id); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public EndpointResponse create(@Valid @RequestBody CreateEndpointRequest request) { return service.create(request); }

@@ -110,6 +110,6 @@ Tenant izolasyonu ayrıca kayıt sorgularında korunur; TENANT_ADMIN başka tena
 kimliğini göndererek yetki kazanamaz. SUPER_ADMIN santral kaydı oluştururken tenantId belirtir.
 Login herkese açıktır; Swagger'ı açmak API işlemlerine yetki vermez.
 
-Asterisk Realtime eşlemeleri henüz tamamlanmadığından bunları gerektiren yazmalar
-503 döndürür ve rollback olur.
+Santral CRUD işlemleri doğrudan uygulama veritabanındaki platform tablolarına yazılır.
+Kayıt, güncelleme ve silme işlemleri Asterisk Realtime entegrasyonuna bağlı değildir.
 

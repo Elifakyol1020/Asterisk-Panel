@@ -8,7 +8,6 @@ import com.netgsm.asterisk.entity.Ivr;
 import com.netgsm.asterisk.entity.IvrOption;
 import com.netgsm.asterisk.repository.IvrOptionRepository;
 import com.netgsm.asterisk.repository.IvrRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

@@ -9,7 +9,6 @@ import com.netgsm.asterisk.entity.QueueMember;
 import com.netgsm.asterisk.repository.QueueMemberRepository;
 import com.netgsm.asterisk.repository.QueueRepository;
 import com.netgsm.asterisk.repository.EndpointRepository;
-import com.netgsm.asterisk.exception.AsteriskConfigurationException;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DatabaseOperationException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -19,7 +18,6 @@ import com.netgsm.asterisk.exception.PlatformException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.exception.TenantAccessDeniedException;
 import com.netgsm.asterisk.service.CurrentUserService;
-import com.netgsm.asterisk.service.AsteriskRealtimeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -33,7 +31,6 @@ public class QueueMemberService {
     private final QueueMemberRepository members;
     private final EndpointRepository endpoints;
     private final CurrentUserService current;
-    private final AsteriskRealtimeService realtime;
     @Transactional(readOnly = true)
     public Page<QueueMemberResponse> list(Long queueId, Pageable page) {
         Queue queue = find(queueId);
@@ -45,7 +42,7 @@ public class QueueMemberService {
         if (members.existsByQueueIdAndEndpointId(queueId, request.endpointId())) throw new DuplicateResourceException("Queue member");
         QueueMember member = new QueueMember(); member.setTenantId(tenantId); member.setQueueId(queueId);
         member.setEndpointId(request.endpointId()); member.setPenalty(request.penalty()); member.setPaused(request.paused());
-        members.saveAndFlush(member); realtime.save(member);
+        members.saveAndFlush(member);
         log.info("Queue member added id={} tenantId={}", member.getId(), tenantId); return QueueMemberResponse.from(member);
     }
     public void delete(Long queueId, Long memberId) {
@@ -53,7 +50,7 @@ public class QueueMemberService {
         current.tenantForCreate(queue.getTenantId());
         var member = members.findByIdAndQueueIdAndTenantId(memberId, queueId, queue.getTenantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Queue member"));
-        realtime.delete(member); members.delete(member);
+        members.delete(member);
         log.info("Queue member deleted id={} tenantId={}", memberId, queue.getTenantId());
     }
     private Queue find(Long id) {
