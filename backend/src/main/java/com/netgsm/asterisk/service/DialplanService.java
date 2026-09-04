@@ -8,6 +8,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.DialplanMapper;
 import com.netgsm.asterisk.repository.DialplanRepository;
+import com.netgsm.asterisk.repository.ExtensionRepository;
 import com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class DialplanService {
     private final CurrentUserService current;
     private final ReferenceService references;
     private final AsteriskDialplanProvisioningService provisioning;
+    private final ExtensionRepository extensions;
 
     @Transactional(readOnly = true)
     public Page<DialplanResponse> list(Long requestedTenantId, Pageable page) {
@@ -55,6 +57,9 @@ public class DialplanService {
 
     public java.util.List<DialplanResponse> createFlow(com.netgsm.asterisk.dto.CreateDialplanFlowRequest request) {
         Long tenantId = current.tenantForCreate(request.tenantId());
+        if (extensions.existsByTenantIdAndExtensionNumber(tenantId, request.extension())) {
+            throw new DuplicateResourceException("Extension number");
+        }
         if (repository.existsByTenantIdAndExtension(tenantId, request.extension())) {
             throw new DuplicateResourceException("Dialplan extension");
         }

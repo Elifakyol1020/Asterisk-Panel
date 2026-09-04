@@ -25,4 +25,4 @@ export const resources: Record<string, ResourceConfig> = {
   members: queueMemberResource,
   options: ivrOptionResource,
 }
-export const pbxKeys = ['endpoints', 'trunks', 'queues', 'ivrs', 'extensions', 'dialplans']
+export const pbxKeys = ['endpoints', 'trunks', 'queues', 'ivrs', 'extensions']

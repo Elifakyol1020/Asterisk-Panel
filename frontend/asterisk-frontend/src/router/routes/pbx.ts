@@ -78,21 +78,6 @@ export const pbxRoutes: RouteRecordRaw[] = [
     meta: { title: 'Dahili düzenle' },
   },
   {
-    path: 'dialplans',
-    component: () => import('@/views/pbx/dialplans/DialplanListView.vue'),
-    meta: { title: 'Arama planları' },
-  },
-  {
-    path: 'dialplans/create',
-    component: () => import('@/views/pbx/dialplans/DialplanCreateView.vue'),
-    meta: { title: 'Arama planı oluştur' },
-  },
-  {
-    path: 'dialplans/:id/edit',
-    component: () => import('@/views/pbx/dialplans/DialplanEditView.vue'),
-    meta: { title: 'Arama planı düzenle' },
-  },
-  {
     path: 'queues/:parentId/members',
     component: () => import('@/views/pbx/queues/members/QueueMemberListView.vue'),
     meta: { title: 'Kuyruk üyeleri' },

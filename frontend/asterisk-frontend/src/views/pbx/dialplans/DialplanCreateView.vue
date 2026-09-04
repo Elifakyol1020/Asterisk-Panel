@@ -49,7 +49,8 @@ async function saveFlow() {
         applicationData: requiresData(step.application) ? step.applicationData : '',
       })),
     })
-    await router.push({ ...url(basePath), query: { ...url(basePath).query, saved: '1' } })
+    const extensionsPath = basePath.replace(/\/dialplans$/, '/extensions')
+    await router.push({ ...url(extensionsPath), query: { ...url(extensionsPath).query, saved: '1' } })
   } catch (cause) {
     error.value = errorMessage(cause)
   } finally {
@@ -59,8 +60,8 @@ async function saveFlow() {
 </script>
 
 <template>
-  <PageHeader title="Arama planı oluştur" description="Bir numara için sıralı birden fazla Asterisk işlemi tanımlayın.">
-    <RouterLink :to="url(basePath)" class="button">Listeye dön</RouterLink>
+  <PageHeader title="Gelişmiş çağrı akışı" description="Bir dahili numarası için sıralı Answer, Playback, Wait ve Hangup işlemleri tanımlayın.">
+    <RouterLink :to="url(basePath.replace(/\/dialplans$/, '/extensions'))" class="button">Dahililere dön</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :retry="!ready && !loading" @retry="initialize" />
   <EmptyState v-if="loading" loading />
@@ -90,7 +91,7 @@ async function saveFlow() {
         </div>
       </div>
       <button type="button" class="button" @click="addStep">+ İşlem ekle</button>
-      <FormActions :cancel-to="url(basePath)" :saving="saving" />
+      <FormActions :cancel-to="url(basePath.replace(/\/dialplans$/, '/extensions'))" :saving="saving" />
     </form>
     <aside class="form-aside"><h3>Nasıl çalışır?</h3><p>Her işlem aynı extension için ayrı priority satırı olarak realtime <code>extensions</code> tablosuna yazılır.</p></aside>
   </div>
