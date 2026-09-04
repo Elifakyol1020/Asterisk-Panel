@@ -7,6 +7,9 @@ public interface QueueMemberRepository extends JpaRepository<QueueMember, Long> 
     Page<QueueMember> findAllByQueueIdAndTenantId(Long queueId, Long tenantId, Pageable page);
     Optional<QueueMember> findByIdAndQueueIdAndTenantId(Long id, Long queueId, Long tenantId);
     boolean existsByQueueIdAndEndpointId(Long queueId, Long endpointId);
+    boolean existsByQueueIdAndEndpointIdAndIdNot(Long queueId, Long endpointId, Long id);
     boolean existsByEndpointId(Long endpointId);
+    boolean existsByTenantIdAndEndpointId(Long tenantId, Long endpointId);
     boolean existsByQueueId(Long queueId);
+    boolean existsByTenantIdAndQueueId(Long tenantId, Long queueId);
 }

@@ -10,13 +10,13 @@ public class TenantMapper {
 
     public Tenant toEntity(TenantRequest request) {
         Tenant tenant = new Tenant();
-        update(request, tenant);
+        update(request, tenant, request.code());
         return tenant;
     }
 
-    public void update(TenantRequest request, Tenant tenant) {
+    public void update(TenantRequest request, Tenant tenant, String code) {
         tenant.setName(request.name().trim());
-        tenant.setCode(request.code());
+        tenant.setCode(code);
         tenant.setStatus(request.status());
     }
 

@@ -6,7 +6,7 @@ import AppIcon from './AppIcon.vue'
   <section class="panel integration-card">
     <span class="integration-icon"><AppIcon name="info" :size="20" /></span>
     <h3>Yapılandırma kayıtları</h3>
-    <p>Santral ayarlarınız uygulama veritabanında saklanır. Bir kaydın oluşması, canlı santral üzerinde etkinleştirildiğini veya bir cihazın bağlandığını göstermez.</p>
-    <div class="integration-status">Bu panel kayıtlı yapılandırmaları gösterir.</div>
+    <p>Santral ayarları veritabanında saklanır.</p>
+    <div class="integration-status">Kayıtlı yapılandırmalar</div>
   </section>
 </template>

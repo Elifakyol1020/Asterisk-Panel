@@ -16,7 +16,7 @@ const props = defineProps<{
 }>()
 const options = computed(() => props.targets.map(target => ({
   value: Number(target.id),
-  label: `${recordLabel(target)} · #${target.id}`,
+  label: `${target.extension || '—'} · ${target.displayName || recordLabel(target)} · #${target.id}`,
 })))
 </script>
 
@@ -32,10 +32,11 @@ const options = computed(() => props.targets.map(target => ({
   >
     <template #hint>
       <span v-if="!lookupLoading && !targets.length" class="form-hint">
-        {{ scope ? 'Bu tenant’ta seçilebilir hedef yok. Önce ilgili kaydı oluşturun.' : 'Hedefleri görmek için tenant seçin.' }}
+        {{ scope ? 'Bu tenant’ta hedef yok.' : 'Tenant seçin.' }}
       </span>
     </template>
   </FormField>
+  <p class="form-hint full">Yalnızca bu kuyruğun tenant’ına ait SIP endpoint’leri gösterilir. Seçilen üye realtime queue_members tablosuna tenant-aware PJSIP adıyla yazılır.</p>
   <FormField
     v-model="form.penalty"
     :field="fields.penalty!"

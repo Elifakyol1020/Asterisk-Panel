@@ -8,6 +8,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.IvrMapper;
 import com.netgsm.asterisk.repository.IvrRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class IvrService {
     private final IvrRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final AsteriskDialplanProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<IvrResponse> list(Long requestedTenantId, Pageable page) {
@@ -45,6 +47,7 @@ public class IvrService {
         Ivr entity = mapper.toEntity(request, tenantId);
 
         repository.saveAndFlush(entity);
+        provisioning.recompileIvr(entity);
 
         log.info("Ivr created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
@@ -56,9 +59,11 @@ public class IvrService {
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndNameAndIdNot(tenantId, request.name(), id)) throw new DuplicateResourceException("Ivr");
 
+        provisioning.deleteIvr(entity);
         mapper.update(request, entity);
 
         repository.flush();
+        provisioning.recompileIvr(entity);
 
         log.info("Ivr updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
@@ -67,8 +72,9 @@ public class IvrService {
     public void delete(Long id) {
         Ivr entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("IVR", id);
+        references.requireUnreferenced(entity.getTenantId(), "IVR", id);
 
+        provisioning.deleteIvr(entity);
         repository.delete(entity);
         repository.flush();
         log.info("Ivr deleted id={} tenantId={}", id, entity.getTenantId());

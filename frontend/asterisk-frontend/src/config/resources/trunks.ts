@@ -14,8 +14,8 @@ export const trunkResource: ResourceConfig = {
         }
     ],
     fields: [
-        text('name', 'Trunk adı'), text('host', 'Sunucu adresi', {
-            maxLength: 253, pattern: '[a-zA-Z0-9.:\\-]{1,253}'
+        text('name', 'Trunk adı'), text('host', 'IP veya CIDR', {
+            maxLength: 18, pattern: '([0-9]{1,3}\\.){3}[0-9]{1,3}(/[0-9]{1,2})?', hint: 'Örn. 192.0.2.10 veya 192.0.2.0/24.'
         }), num('port', 'Port', 1, 65535, 5060), text('username', 'SIP kullanıcı adı', {
             maxLength: 80, pattern: '[a-zA-Z0-9_.\\-]{1,80}'
         }), password, transport, text('fromUser', 'From user', {

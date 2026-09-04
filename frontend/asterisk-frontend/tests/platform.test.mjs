@@ -24,7 +24,7 @@ function load(file, mocks = {}, globals = {}) {
 }
 const { readClaims } = load('src/utils/session.ts')
 const { resources, pbxKeys } = load('src/config/resources.ts')
-const { buildPayload, validatePayload } = load('src/utils/resourceForm.ts')
+const { buildPayload, normalizeTenantCode, validatePayload } = load('src/utils/resourceForm.ts')
 const token = data => `header.${Buffer.from(JSON.stringify(data)).toString('base64url')}.signature`
 const valid = { sub: '12', userId: 12, role: 'SUPER_ADMIN', exp: Math.floor(Date.now() / 1000) + 3600 }
 test('JWT: both backend roles map to the correct identity', () => {
@@ -43,6 +43,11 @@ test('Payload: backend fields only; no ID, context or response metadata', () => 
   assert.equal(result.tenantId, 42); assert.equal(result.id, undefined); assert.equal(result.context, undefined)
   const tenant = buildPayload(resources.endpoints.fields, form, false, 'endpoints', false, 99)
   assert.equal('tenantId' in tenant, false)
+})
+test('Tenant code accepts friendly input and normalizes before save', () => {
+  assert.equal(normalizeTenantCode('Net GSM A.Ş.'), 'net_gsm_a_s')
+  const data = buildPayload(resources.tenants.fields, { name: 'Net GSM A.Ş.', code: ' Net GSM A.Ş. ', status: 'ACTIVE' }, false, 'tenants', true)
+  assert.equal(data.code, 'net_gsm_a_s')
 })
 test('Update: empty password is omitted, not sent as an empty string', () => {
   assert.equal('password' in buildPayload(resources.users.fields, { password: '' }, true, 'users', true, 3), false)
@@ -85,7 +90,7 @@ test('Router: role boundaries, guest redirect, expiry and exactly two dashboards
   const tenantRoutes = routes.find(r => r.path === '/tenant').children
   assert.equal(tenantRoutes.some(r => r.path === 'users' || r.path === 'tenants'), false)
   assert.ok(tenantRoutes.some(r => r.path === 'ivrs/:parentId/options/:id/edit'))
-  assert.equal(tenantRoutes.some(r => r.path === 'queues/:parentId/members/:id/edit'), false)
+  assert.ok(tenantRoutes.some(r => r.path === 'queues/:parentId/members/:id/edit'))
 })
 test('API errors distinguish network, auth, validation and service failures', () => {
   const { errorMessage, fieldErrors } = load('src/api/platform.ts', { axios: { isAxiosError: e => Boolean(e?.isAxiosError) }, './axios': {} })
@@ -170,6 +175,14 @@ test('Resource flow: nested IVR option update uses parent path and null HANGUP t
   const call = h.calls.find(call => call[0] === 'PUT')
   assert.equal(call[1], '/ivrs/9/options/2'); assert.equal(call[2].targetId, null)
 })
+test('Resource flow: nested queue member update uses parent path', async () => {
+  const h = resourceHarness('members', { role: 'TENANT_ADMIN', form: true, parentId: '6', id: '3', get: url => url === '/queues/6' ? { id: 6, tenantId: 7, name: 'Support' } : { content: [{ id: 3, endpointId: 11, penalty: 0, paused: false }], totalPages: 1 } })
+  await h.state.initialize(); h.state.form.paused = true
+  await h.state.save()
+  const call = h.calls.find(call => call[0] === 'PUT')
+  assert.equal(call[1], '/queues/6/members/3'); assert.equal(call[2].endpointId, 11)
+  assert.equal(call[2].paused, true)
+})
 test('Resource flow: tenant deactivate uses DELETE then reloads', async () => {
   const h = resourceHarness('tenants')
   await h.state.initialize(); h.state.deleteTarget.value = { id: 5, name: 'Example' }
@@ -213,7 +226,7 @@ test('Architecture: resource-specific field components explicitly declare every 
 test('PBX create, update and delete remain wired after removal of the Realtime dependency', async () => {
   const fixtures = {
     endpoints: { displayName: 'Test endpoint', extension: '1001', password: 'test-password-12' },
-    trunks: { name: 'Test trunk', host: 'sip.test.invalid', username: 'testuser', password: 'test-password-12' },
+    trunks: { name: 'Test trunk', host: '192.0.2.10', username: 'testuser', password: 'test-password-12' },
     queues: { name: 'support' },
     ivrs: { name: 'Main menu', audioFile: 'welcome' },
     extensions: { name: 'Reception', extensionNumber: '1002', targetType: 'ENDPOINT', targetId: 11 },
@@ -262,8 +275,8 @@ test('UI does not claim that configuration writes require Realtime', () => {
   }
   inspect(path.join(root, 'src'))
   const notice = fs.readFileSync(path.join(root, 'src/components/common/ConfigurationNotice.vue'), 'utf8')
-  assert.match(notice, /uygulama veritabanında/)
-  assert.match(notice, /canlı santral/)
+  assert.match(notice, /veritabanında/)
+  assert.doesNotMatch(notice, /canlı santral/)
 })
 
 // Opt-in read-only contract verification. No login or mutation requests are made.
@@ -292,7 +305,7 @@ test('Live backend OpenAPI matches all frontend request fields and operation pat
     const item = key === 'users' ? '/api/admin/users/{id}'
       : key === 'members' ? collection + '/{memberId}' : collection + '/{id}'
     assert.ok(spec.paths[item]?.delete, item + ' DELETE')
-    if (key !== 'members') assert.ok(spec.paths[item]?.put, item + ' PUT')
+    assert.ok(spec.paths[item]?.put, item + ' PUT')
     if (!['members', 'options'].includes(key)) assert.ok(spec.paths[item]?.get, item + ' GET')
   }
   assert.ok(spec.paths['/api/auth/login']?.post)

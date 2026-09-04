@@ -12,10 +12,10 @@ export const enabled: Field = {
     key: 'enabled', label: 'Kayıt aktif', type: 'checkbox', default: true
 };
 export const password: Field = {
-    key: 'password', label: 'Şifre', type: 'password', required: true, minLength: 12, maxLength: 72, hint: 'En az 12 karakter, en fazla 72 UTF-8 byte. Düzenlemede boş bırakırsanız değişmez.'
+    key: 'password', label: 'Şifre', type: 'password', required: true, minLength: 12, maxLength: 72, hint: '12–72 UTF-8 byte. Düzenlemede boşsa değişmez.'
 };
 export const transport = text('transport', 'Transport', {
-    pattern: '[a-zA-Z0-9_\\-]{1,80}', maxLength: 80, default: 'transport-udp', hint: 'Asterisk üzerinde tanımlı transport adı.'
+    pattern: '[a-zA-Z0-9_\\-]{1,80}', maxLength: 80, default: 'transport-udp', hint: 'Asterisk transport adı.'
 });
 export const numberPattern = '[0-9]{1,20}';
 export const identifier = '[a-zA-Z0-9_\\-]{1,80}';

@@ -42,12 +42,12 @@ public class ReferenceService {
         };
         if (!exists) throw new ResourceNotFoundException("Target");
     }
-    public void requireUnreferenced(String type, Long id) {
-        boolean referenced = extensions.existsByTargetTypeAndTargetId(type, id)
-                || options.existsByActionTypeAndTargetId(type, id)
-                || ("ENDPOINT".equals(type) && members.existsByEndpointId(id))
-                || ("QUEUE".equals(type) && members.existsByQueueId(id))
-                || ("IVR".equals(type) && options.existsByIvrId(id));
+    public void requireUnreferenced(Long tenantId, String type, Long id) {
+        boolean referenced = extensions.existsByTenantIdAndTargetTypeAndTargetId(tenantId, type, id)
+                || options.existsByTenantIdAndActionTypeAndTargetId(tenantId, type, id)
+                || ("ENDPOINT".equals(type) && members.existsByTenantIdAndEndpointId(tenantId, id))
+                || ("QUEUE".equals(type) && members.existsByTenantIdAndQueueId(tenantId, id))
+                || ("IVR".equals(type) && options.existsByTenantIdAndIvrId(tenantId, id));
         if (referenced) throw new DuplicateResourceException("Referenced resource; remove its references first");
     }
     public void validateDialplan(String application, String data) {

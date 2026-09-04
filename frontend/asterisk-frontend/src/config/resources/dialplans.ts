@@ -19,7 +19,7 @@ export const dialplanResource: ResourceConfig = {
         }), num('priority', 'Öncelik', 1, 1000, 1), select('application', 'Uygulama', [
             'Answer', 'Hangup', 'Playback', 'Wait'
         ]), text('applicationData', 'Uygulama parametresi', {
-            required: false, hint: 'Answer/Hangup: boş. Playback: ses adı. Wait: 0–300 saniye.'
+            required: false, hint: 'Answer/Hangup boş; Playback ses adı; Wait 0–300 sn.'
         }), enabled
     ]
 };

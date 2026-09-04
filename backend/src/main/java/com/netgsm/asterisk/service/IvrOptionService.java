@@ -10,6 +10,7 @@ import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.IvrOptionMapper;
 import com.netgsm.asterisk.repository.IvrOptionRepository;
 import com.netgsm.asterisk.repository.IvrRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class IvrOptionService {
     private final IvrOptionRepository options;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final AsteriskDialplanProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<IvrOptionResponse> list(Long ivrId, Pageable page) {
@@ -43,6 +45,7 @@ public class IvrOptionService {
         validateTarget(ivrId, ivr.getTenantId(), request);
         IvrOption option = mapper.toEntity(request, ivrId, ivr.getTenantId());
         options.saveAndFlush(option);
+        provisioning.recompileIvr(ivr);
         log.info("IVR option created id={} tenantId={}", option.getId(), option.getTenantId());
         return mapper.toResponse(option);
     }
@@ -55,6 +58,7 @@ public class IvrOptionService {
         validateTarget(ivrId, ivr.getTenantId(), request);
         mapper.update(request, option);
         options.flush();
+        provisioning.recompileIvr(ivr);
         log.info("IVR option updated id={}", id);
         return mapper.toResponse(option);
     }
@@ -63,6 +67,8 @@ public class IvrOptionService {
         Ivr ivr = find(ivrId);
         current.tenantForCreate(ivr.getTenantId());
         options.delete(options.findByIdAndIvrIdAndTenantId(id, ivrId, ivr.getTenantId()).orElseThrow(() -> new ResourceNotFoundException("IVR option")));
+        options.flush();
+        provisioning.recompileIvr(ivr);
         log.info("IVR option deleted id={}", id);
     }
 

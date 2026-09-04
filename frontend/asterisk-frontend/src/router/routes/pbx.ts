@@ -103,6 +103,11 @@ export const pbxRoutes: RouteRecordRaw[] = [
     meta: { title: 'Kuyruk üyesi oluştur' },
   },
   {
+    path: 'queues/:parentId/members/:id/edit',
+    component: () => import('@/views/pbx/queues/members/QueueMemberEditView.vue'),
+    meta: { title: 'Kuyruk üyesi düzenle' },
+  },
+  {
     path: 'ivrs/:parentId/options',
     component: () => import('@/views/pbx/ivrs/options/IvrOptionListView.vue'),
     meta: { title: 'IVR seçenekleri' },

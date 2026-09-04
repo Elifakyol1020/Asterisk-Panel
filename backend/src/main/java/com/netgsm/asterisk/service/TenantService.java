@@ -9,6 +9,8 @@ import com.netgsm.asterisk.exception.PlatformException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.TenantMapper;
 import com.netgsm.asterisk.repository.TenantRepository;
+import java.text.Normalizer;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,8 +44,10 @@ public class TenantService {
     }
 
     public TenantResponse create(TenantRequest request) {
-        if (repository.existsByCode(request.code())) throw new DuplicateResourceException("Tenant code");
-        Tenant tenant = mapper.toEntity(request);
+        String code = normalizeCode(request.code());
+        if (repository.existsByCode(code)) throw new DuplicateResourceException("Tenant code");
+        Tenant tenant = new Tenant();
+        mapper.update(request, tenant, code);
         repository.saveAndFlush(tenant);
         log.info("Tenant created id={}", tenant.getId());
         return mapper.toResponse(tenant);
@@ -51,8 +55,9 @@ public class TenantService {
 
     public TenantResponse update(Long id, TenantRequest request) {
         Tenant tenant = find(id);
-        if (repository.existsByCodeAndIdNot(request.code(), id)) throw new DuplicateResourceException("Tenant code");
-        mapper.update(request, tenant);
+        String code = normalizeCode(request.code());
+        if (repository.existsByCodeAndIdNot(code, id)) throw new DuplicateResourceException("Tenant code");
+        mapper.update(request, tenant, code);
         repository.flush();
         log.info("Tenant updated id={}", id);
         return mapper.toResponse(tenant);
@@ -65,5 +70,21 @@ public class TenantService {
 
     private Tenant find(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Tenant"));
+    }
+
+    private String normalizeCode(String value) {
+        String ascii = value.trim().toLowerCase(Locale.ROOT)
+                .replace('ı', 'i').replace('ğ', 'g').replace('ü', 'u')
+                .replace('ş', 's').replace('ö', 'o').replace('ç', 'c');
+        String normalized = Normalizer.normalize(ascii, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_|_$", "");
+        if (normalized.length() > 48) normalized = normalized.substring(0, 48).replaceAll("_+$", "");
+        if (normalized.length() < 2) {
+            throw new PlatformException(400, "INVALID_TENANT_CODE", "Kısa kod en az iki harf veya rakam içermeli");
+        }
+        return normalized;
     }
 }

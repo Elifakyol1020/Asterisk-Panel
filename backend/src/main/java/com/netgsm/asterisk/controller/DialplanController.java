@@ -17,6 +17,11 @@ public class DialplanController {
     @GetMapping("/{id}") public DialplanResponse get(@PathVariable Long id) { return service.get(id); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public DialplanResponse create(@Valid @RequestBody CreateDialplanRequest request) { return service.create(request); }
+    @PostMapping("/flow") @ResponseStatus(HttpStatus.CREATED)
+    public java.util.List<DialplanResponse> createFlow(
+            @Valid @RequestBody com.netgsm.asterisk.dto.CreateDialplanFlowRequest request) {
+        return service.createFlow(request);
+    }
     @PutMapping("/{id}")
     public DialplanResponse update(@PathVariable Long id, @Valid @RequestBody UpdateDialplanRequest request) { return service.update(id, request); }
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)

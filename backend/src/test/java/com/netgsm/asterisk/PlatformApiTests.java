@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.config.import=",
         "spring.datasource.url=jdbc:h2:mem:api;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.sql.init.mode=always", "spring.sql.init.schema-locations=classpath:schema.sql",
+        "spring.sql.init.mode=always", "spring.sql.init.schema-locations=classpath:schema.sql,classpath:test-realtime-schema.sql",
         "spring.jpa.hibernate.ddl-auto=validate",
         "app.jwt.secret=test-only-secret-that-is-at-least-32-bytes", "app.jwt.expiration=60000",
         "app.cors.allowed-origins=https://test.invalid"
@@ -57,6 +57,13 @@ class PlatformApiTests {
     @Autowired com.netgsm.asterisk.repository.TrunkRepository trunks;
     @Autowired com.netgsm.asterisk.repository.DialplanRepository dialplans;
     @Autowired org.springframework.context.ApplicationContext context;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.PsEndpointRepository psEndpoints;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.PsAuthRepository psAuths;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.PsAorRepository psAors;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.PsEndpointIdIpRepository psIdentifies;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.AsteriskQueueRepository realtimeQueues;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.AsteriskQueueMemberRepository realtimeMembers;
+    @Autowired com.netgsm.asterisk.asterisk.realtime.repository.AsteriskExtensionRepository realtimeExtensions;
     Tenant first, second;
     User admin, firstAdmin, secondAdmin;
     String passwordHash;
@@ -64,6 +71,8 @@ class PlatformApiTests {
     @BeforeEach void fixtures() {
         members.deleteAll(); options.deleteAll(); extensions.deleteAll(); queues.deleteAll();
         ivrs.deleteAll(); endpoints.deleteAll(); trunks.deleteAll(); dialplans.deleteAll(); users.deleteAll(); tenants.deleteAll();
+        realtimeMembers.deleteAll(); realtimeQueues.deleteAll(); realtimeExtensions.deleteAll();
+        psIdentifies.deleteAll(); psEndpoints.deleteAll(); psAuths.deleteAll(); psAors.deleteAll();
         first = tenant("first"); second = tenant("second");
         passwordHash = passwords.encode("test-password-123");
         admin = user("root", null, Role.SUPER_ADMIN);
@@ -120,6 +129,18 @@ class PlatformApiTests {
         }
         mvc.perform(get("/api/admin/tenants").param("sort", "name,desc").header("Authorization", bearer(admin)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].name").value("second"));
+    }
+    @Test void tenantCodeIsNormalizedFromFriendlyInput() throws Exception {
+        var body = json.writeValueAsString(Map.of("name", "Net GSM A.Ş.", "code", "Net GSM A.Ş.", "status", "ACTIVE"));
+        mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Net GSM A.Ş."))
+                .andExpect(jsonPath("$.code").value("net_gsm_a_s"));
+        mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("name", "Invalid", "code", "!", "status", "ACTIVE"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("INVALID_TENANT_CODE"));
     }
     @Test void methodSecurityRejectsUnassignedRolesForPbxServices() {
         var security = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
@@ -218,7 +239,7 @@ class PlatformApiTests {
     }
     @Test void trunkCrudPersistsInDatabase() throws Exception {
         assertDatabaseCrud("/api/trunks", json.writeValueAsString(Map.of(
-                "name", "provider", "host", "sip.test.invalid", "port", 5060,
+                "name", "provider", "host", "192.0.2.10", "port", 5060,
                 "username", "sip-user", "transport", "transport-udp", "enabled", true,
                 "password", "sip-password-123")), trunks);
     }
@@ -231,6 +252,68 @@ class PlatformApiTests {
         assertDatabaseCrud("/api/dialplans", json.writeValueAsString(Map.of(
                 "extension", "2001", "priority", 1, "application", "Answer",
                 "applicationData", "", "enabled", true)), dialplans);
+    }
+    @Test void asteriskRealtimeProjectionIsWrittenForPbxCrud() throws Exception {
+        mvc.perform(post("/api/endpoints").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(endpointRequest(first.getId())))
+                .andExpect(status().isCreated());
+        assertThat(psAors.findById("tenant" + first.getId() + "_1001")).isPresent();
+        assertThat(psAuths.findById("tenant" + first.getId() + "_1001_auth").orElseThrow().getUsername()).isEqualTo("tenant" + first.getId() + "_1001");
+        assertThat(psAuths.findById("tenant" + first.getId() + "_1001_auth").orElseThrow().getPassword()).isEqualTo("sip-password-123");
+        assertThat(psEndpoints.findById("tenant" + first.getId() + "_1001").orElseThrow().getAors()).isEqualTo("tenant" + first.getId() + "_1001");
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_1001"))
+                .extracting("app").containsExactly("NoOp", "Dial", "Hangup");
+
+        mvc.perform(post("/api/trunks").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "name", "eren", "host", "192.0.2.20", "port", 5060, "username", "sip-user",
+                        "transport", "transport-udp", "enabled", true, "password", "sip-password-123"))))
+                .andExpect(status().isCreated());
+        assertThat(psEndpoints.findById("tenant" + first.getId() + "_trunk_eren")).isPresent();
+        assertThat(psAors.findById("tenant" + first.getId() + "_trunk_eren").orElseThrow().getContact()).isEqualTo("sip:192.0.2.20:5060");
+        assertThat(psIdentifies.findById("tenant" + first.getId() + "_trunk_eren_identify").orElseThrow().getMatchValue()).isEqualTo("192.0.2.20");
+
+        mvc.perform(post("/api/queues").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "name", "support", "strategy", "leastrecent", "timeout", 20, "retry", 5,
+                        "wrapupTime", 15, "maxLength", 0, "musicOnHold", "default", "enabled", true))))
+                .andExpect(status().isCreated());
+        Queue queue = queues.findAll().stream().filter(row -> row.getTenantId().equals(first.getId())).findFirst().orElseThrow();
+        assertThat(realtimeQueues.findById("tenant" + first.getId() + "_support").orElseThrow().getWrapuptime()).isEqualTo(15);
+
+        Endpoint endpoint = endpoints.findAll().stream().filter(row -> row.getTenantId().equals(first.getId())).findFirst().orElseThrow();
+        mvc.perform(post("/api/queues/" + queue.getId() + "/members").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("endpointId", endpoint.getId(), "penalty", 0, "paused", false))))
+                .andExpect(status().isCreated());
+        assertThat(realtimeMembers.findById(new com.netgsm.asterisk.asterisk.realtime.entity.AsteriskQueueMemberId(
+                "tenant" + first.getId() + "_support", "PJSIP/tenant" + first.getId() + "_1001"))).isPresent();
+
+        mvc.perform(post("/api/extensions").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "extensionNumber", "2001", "name", "Support route", "targetType", "QUEUE", "targetId", queue.getId(), "enabled", true))))
+                .andExpect(status().isCreated());
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_2001"))
+                .extracting("app", "appdata").contains(org.assertj.core.groups.Tuple.tuple("Queue", "tenant" + first.getId() + "_support"));
+
+        mvc.perform(post("/api/dialplans").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "extension", "3001", "priority", 1, "application", "Playback", "applicationData", "welcome", "enabled", true))))
+                .andExpect(status().isCreated());
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_3001"))
+                .extracting("appdata").containsExactly("welcome");
+
+        mvc.perform(post("/api/ivrs").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(ivrRequest(first.getId(), "main")))
+                .andExpect(status().isCreated());
+        Ivr ivr = ivrs.findAll().stream().filter(row -> row.getTenantId().equals(first.getId())).findFirst().orElseThrow();
+        mvc.perform(post("/api/ivrs/" + ivr.getId() + "/options").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("digit", "2", "actionType", "QUEUE", "targetId", queue.getId()))))
+                .andExpect(status().isCreated());
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_ivr_main"))
+                .extracting("app").containsExactly("Answer", "Set", "Read", "GotoIf", "Goto");
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_ivr_main_2"))
+                .extracting("app", "appdata").contains(
+                        org.assertj.core.groups.Tuple.tuple("Queue", "tenant" + first.getId() + "_support"));
     }
     @Test void queueMemberCreateAndDeletePersistInDatabase() throws Exception {
         Queue queue = queue(first.getId()); Endpoint endpoint = endpoint(first.getId());
@@ -246,6 +329,29 @@ class PlatformApiTests {
         mvc.perform(delete(path + "/" + id).header("Authorization", bearer(firstAdmin)))
                 .andExpect(status().isNoContent());
         assertThat(members.existsById(id)).isFalse();
+    }
+    @Test void queueMemberUpdatePersistsInDatabaseAndRejectsCrossTenantEndpoint() throws Exception {
+        Queue queue = queue(first.getId());
+        Endpoint firstEndpoint = endpoint(first.getId());
+        Endpoint secondEndpoint = endpoint(first.getId(), "1002");
+        Endpoint otherTenantEndpoint = endpoint(second.getId());
+        var member = new com.netgsm.asterisk.entity.QueueMember();
+        member.setTenantId(first.getId()); member.setQueueId(queue.getId()); member.setEndpointId(firstEndpoint.getId());
+        member.setPenalty(0); member.setPaused(false); member = members.saveAndFlush(member);
+        String path = "/api/queues/" + queue.getId() + "/members/" + member.getId();
+        mvc.perform(put(path).header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "endpointId", otherTenantEndpoint.getId(), "penalty", 2, "paused", true))))
+                .andExpect(status().isNotFound());
+        mvc.perform(put(path).header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+                        "endpointId", secondEndpoint.getId(), "penalty", 2, "paused", true))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.endpointId").value(secondEndpoint.getId()))
+                .andExpect(jsonPath("$.penalty").value(2)).andExpect(jsonPath("$.paused").value(true));
+        var saved = members.findById(member.getId()).orElseThrow();
+        assertThat(saved.getEndpointId()).isEqualTo(secondEndpoint.getId());
+        assertThat(saved.getPenalty()).isEqualTo(2);
+        assertThat(saved.getPaused()).isTrue();
     }
     @Test void crossTenantQueueMemberIsRejectedBeforeDatabaseWrite() throws Exception {
         Queue queue = queue(first.getId()); Endpoint other = endpoint(second.getId());
@@ -310,7 +416,11 @@ class PlatformApiTests {
         user.setRole(role); user.setEnabled(true); user.setPasswordHash(passwordHash); return users.saveAndFlush(user);
     }
     private Endpoint endpoint(Long tenantId) {
+        return endpoint(tenantId, "1001");
+    }
+    private Endpoint endpoint(Long tenantId, String extensionNumber) {
         Endpoint endpoint = new Endpoint(); endpoint.setTenantId(tenantId); endpoint.setExtension("1001"); endpoint.setDisplayName("test");
+        endpoint.setExtension(extensionNumber);
         endpoint.setContext("tenant_" + tenantId + "_internal"); endpoint.setTransport("transport-udp"); endpoint.setCodecs("ulaw");
         endpoint.setEnabled(true); endpoint.setPasswordHash(passwordHash); return endpoints.saveAndFlush(endpoint);
     }
@@ -329,4 +439,3 @@ class PlatformApiTests {
         return json.writeValueAsString(Map.of("tenantId", tenantId, "extension", "1001", "displayName", "test", "transport", "transport-udp", "codecs", "ulaw", "enabled", true, "password", "sip-password-123"));
     }
 }
-

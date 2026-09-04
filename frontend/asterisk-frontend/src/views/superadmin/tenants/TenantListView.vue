@@ -54,7 +54,7 @@ const {
       <table>
         <thead><tr>
           <th>Kayıt</th>
-          <th>Tenant kodu</th>
+          <th>Kısa kod</th>
           <th>Durum</th>
           <th>Oluşturulma</th>
           <th class="actions-heading">İşlemler</th>

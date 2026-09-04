@@ -8,6 +8,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.DialplanMapper;
 import com.netgsm.asterisk.repository.DialplanRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class DialplanService {
     private final DialplanRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final AsteriskDialplanProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<DialplanResponse> list(Long requestedTenantId, Pageable page) {
@@ -46,8 +48,34 @@ public class DialplanService {
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.saveAndFlush(entity);
+        provisioning.upsertDialplan(entity);
         log.info("Dialplan created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
+    }
+
+    public java.util.List<DialplanResponse> createFlow(com.netgsm.asterisk.dto.CreateDialplanFlowRequest request) {
+        Long tenantId = current.tenantForCreate(request.tenantId());
+        if (repository.existsByTenantIdAndExtension(tenantId, request.extension())) {
+            throw new DuplicateResourceException("Dialplan extension");
+        }
+        request.steps().forEach(step -> references.validateDialplan(step.application(), step.applicationData()));
+        java.util.List<Dialplan> rows = new java.util.ArrayList<>();
+        for (int index = 0; index < request.steps().size(); index++) {
+            var step = request.steps().get(index);
+            Dialplan row = new Dialplan();
+            row.setTenantId(tenantId);
+            row.setExtension(request.extension());
+            row.setPriority(index + 1);
+            row.setApplication(step.application());
+            row.setApplicationData(step.applicationData());
+            row.setEnabled(request.enabled());
+            row.setContext(current.context(tenantId, "internal"));
+            rows.add(row);
+        }
+        repository.saveAllAndFlush(rows);
+        rows.forEach(provisioning::upsertDialplan);
+        log.info("Dialplan flow created extension={} steps={} tenantId={}", request.extension(), rows.size(), tenantId);
+        return rows.stream().map(mapper::toResponse).toList();
     }
 
     public DialplanResponse update(Long id, UpdateDialplanRequest request) {
@@ -56,10 +84,12 @@ public class DialplanService {
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndExtensionAndPriorityAndIdNot(tenantId, request.extension(), request.priority(), id)) throw new DuplicateResourceException("Dialplan");
         references.validateDialplan(request.application(), request.applicationData());
+        provisioning.deleteDialplan(entity);
         mapper.update(request, entity);
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.flush();
+        provisioning.upsertDialplan(entity);
         log.info("Dialplan updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }
@@ -67,7 +97,8 @@ public class DialplanService {
     public void delete(Long id) {
         Dialplan entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("DIALPLAN", id);
+        references.requireUnreferenced(entity.getTenantId(), "DIALPLAN", id);
+        provisioning.deleteDialplan(entity);
         repository.delete(entity);
         repository.flush();
         log.info("Dialplan deleted id={} tenantId={}", id, entity.getTenantId());

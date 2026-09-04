@@ -8,6 +8,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.ExtensionMapper;
 import com.netgsm.asterisk.repository.ExtensionRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class ExtensionService {
     private final ExtensionRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final AsteriskDialplanProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<ExtensionResponse> list(Long requestedTenantId, Pageable page) {
@@ -46,6 +48,7 @@ public class ExtensionService {
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.saveAndFlush(entity);
+        provisioning.upsertExtensionRoute(entity);
 
         log.info("Extension created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
@@ -57,10 +60,12 @@ public class ExtensionService {
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndExtensionNumberAndIdNot(tenantId, request.extensionNumber(), id)) throw new DuplicateResourceException("Extension");
         references.requireTarget(tenantId, request.targetType(), request.targetId());
+        provisioning.deleteExtensionRoute(entity);
         mapper.update(request, entity);
 
         entity.setContext(current.context(tenantId, "internal"));
         repository.flush();
+        provisioning.upsertExtensionRoute(entity);
 
         log.info("Extension updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
@@ -69,8 +74,9 @@ public class ExtensionService {
     public void delete(Long id) {
         Extension entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("EXTENSION", id);
+        references.requireUnreferenced(entity.getTenantId(), "EXTENSION", id);
 
+        provisioning.deleteExtensionRoute(entity);
         repository.delete(entity);
         repository.flush();
         log.info("Extension deleted id={} tenantId={}", id, entity.getTenantId());

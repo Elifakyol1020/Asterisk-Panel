@@ -50,7 +50,7 @@ const quickActions = [
         </EmptyState>
         <div v-else class="table-scroll">
           <table>
-            <thead><tr><th>Kurum</th><th>Tenant kodu</th><th>Durum</th><th aria-label="Düzenle" /></tr></thead>
+            <thead><tr><th>Kurum</th><th>Kısa kod</th><th>Durum</th><th aria-label="Düzenle" /></tr></thead>
             <tbody>
               <tr v-for="row in rows" :key="String(row.id)">
                 <td><RecordIdentity :name="row.name" :id="row.id" icon="building" /></td>

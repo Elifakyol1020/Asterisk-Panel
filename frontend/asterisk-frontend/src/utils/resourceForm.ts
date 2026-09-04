@@ -1,6 +1,25 @@
 import type { Field } from '@/config/resources'
 import type { RecordData } from '@/api/platform'
 
+export function normalizeTenantCode(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 48)
+    .replace(/_+$/g, '')
+}
+
 export function buildPayload(fields: Field[], form: RecordData, editing: boolean, key: string, superAdmin: boolean, tenantId?: number): RecordData {
   const data: RecordData = {}
   for (const field of fields) {
@@ -8,6 +27,7 @@ export function buildPayload(fields: Field[], form: RecordData, editing: boolean
     if (field.type === 'password' && editing && !value) continue
     if (field.type === 'number' || field.key === 'targetId' || field.key === 'endpointId') value = Number(value)
     else if (typeof value === 'string' && field.type !== 'password') value = value.trim()
+    if (key === 'tenants' && field.key === 'code') value = normalizeTenantCode(value)
     data[field.key] = value
   }
   if (key === 'options' && form.actionType === 'HANGUP') data.targetId = null

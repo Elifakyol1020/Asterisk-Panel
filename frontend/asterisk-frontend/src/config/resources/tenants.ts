@@ -4,7 +4,7 @@ export const tenantResource: ResourceConfig = {
     key: 'tenants', title: 'Tenant’lar', singular: 'Tenant', description: 'Kurumları ve platform erişimlerini yönetin.', icon: 'building', api: '/admin/tenants', primary: 'name', softDelete: true,
     columns: [
         {
-            key: 'code', label: 'Tenant kodu'
+            key: 'code', label: 'Kısa kod'
         },
         {
             key: 'status', label: 'Durum'
@@ -14,8 +14,8 @@ export const tenantResource: ResourceConfig = {
         }
     ],
     fields: [
-        text('name', 'Kurum adı'), text('code', 'Tenant kodu', {
-            pattern: '[a-z][a-z0-9_]{1,47}', maxLength: 48, hint: '2–48 karakter; küçük harfle başlar, küçük harf, rakam ve alt çizgi içerir.'
+        text('name', 'Kurum adı'), text('code', 'Kısa kod', {
+            maxLength: 120, hint: 'Otomatik doldurulur.'
         }), select('status', 'Durum', [
             'ACTIVE', 'INACTIVE'
         ])

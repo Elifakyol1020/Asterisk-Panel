@@ -9,4 +9,5 @@ public interface DialplanRepository extends JpaRepository<Dialplan, Long> {
     boolean existsByIdAndTenantId(Long id, Long tenantId);
     boolean existsByTenantIdAndExtensionAndPriority(Long tenantId, String extension, Integer priority);
     boolean existsByTenantIdAndExtensionAndPriorityAndIdNot(Long tenantId, String extension, Integer priority, Long id);
+    boolean existsByTenantIdAndExtension(Long tenantId, String extension);
 }

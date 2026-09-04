@@ -46,6 +46,7 @@ const {
     <RouterLink :to="url(`${basePath}/create`)" class="button button-primary"><AppIcon name="plus" :size="16" />Kuyruk üyesi oluştur</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :success="success || (route.query.saved ? 'Değişiklikler başarıyla kaydedildi.' : '')" :retry="!ready && !loading" @retry="initialize" />
+  <p v-if="parent" class="form-description">Tenant #{{ parent.tenantId }} · Realtime kuyruk: tenant{{ parent.tenantId }}_{{ parent.name }}</p>
   <section class="panel">
     <ListToolbar v-model:search="search" v-model:sort="sort" :total="total" :loading="loading" />
     <EmptyState v-if="loading" loading />
@@ -69,6 +70,7 @@ const {
             <td>{{ displayValue(row.penalty, 'penalty') }}</td>
             <td><StatusBadge :value="row.paused" field="paused" /></td>
             <td><div class="actions">
+              <RouterLink :to="url(`${basePath}/${row.id}/edit`)" class="icon-button" :aria-label="`${row.endpointId} düzenle`"><AppIcon name="edit" :size="17" /></RouterLink>
               <button class="icon-button" :aria-label="`${row.endpointId} sil`" @click="deleteTarget = row"><AppIcon name="trash" :size="17" /></button>
             </div></td>
           </tr>

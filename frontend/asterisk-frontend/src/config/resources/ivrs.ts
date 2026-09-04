@@ -14,8 +14,8 @@ export const ivrResource: ResourceConfig = {
         }
     ],
     fields: [
-        text('name', 'IVR adı'), text('audioFile', 'Ses dosyası adı', {
-            pattern: '[a-zA-Z0-9_\\-]{1,120}', hint: 'Sunucudaki ses adı; uzantı veya dizin yolu eklemeyin.'
+        text('name', 'IVR adı'), text('audioFile', 'Ses dosyası', {
+            pattern: 'custom/tenant[0-9]+/[a-f0-9]{32}', hint: 'Yüklenen WAV dosyasının Asterisk ses anahtarı.'
         }), num('timeout', 'Tuşlama bekleme (sn)', 1, 3600, 10), num('maxAttempts', 'Maksimum deneme', 1, 20, 3), text('description', 'Açıklama', {
             type: 'textarea', required: false, maxLength: 1000
         }), enabled

@@ -9,6 +9,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.EndpointMapper;
 import com.netgsm.asterisk.repository.EndpointRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskEndpointProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class EndpointService {
     private final CurrentUserService current;
     private final ReferenceService references;
     private final PasswordEncoder passwords;
+    private final AsteriskEndpointProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<EndpointResponse> list(Long requestedTenantId, Pageable page) {
@@ -50,6 +52,7 @@ public class EndpointService {
         entity.setContext(current.context(tenantId, "internal"));
         entity.setPasswordHash(hash(request.password()));
         repository.saveAndFlush(entity);
+        provisioning.upsert(entity, request.password());
         log.info("Endpoint created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
     }
@@ -59,12 +62,21 @@ public class EndpointService {
         Long tenantId = entity.getTenantId();
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndExtensionAndIdNot(tenantId, request.extension(), id)) throw new DuplicateResourceException("Endpoint");
+        String oldExtension = entity.getExtension();
+        String oldContext = entity.getContext();
+        if (!oldExtension.equals(request.extension()) && request.password() == null) {
+            throw new BusinessRuleException("SIP password is required when changing an endpoint number");
+        }
 
         mapper.update(request, entity);
 
         entity.setContext(current.context(tenantId, "internal"));
         if (request.password() != null) entity.setPasswordHash(hash(request.password()));
         repository.flush();
+        if (!oldExtension.equals(entity.getExtension()) || !oldContext.equals(entity.getContext())) {
+            provisioning.renameOrDelete(tenantId, oldExtension, oldContext);
+        }
+        provisioning.upsert(entity, request.password());
         log.info("Endpoint updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }
@@ -72,7 +84,8 @@ public class EndpointService {
     public void delete(Long id) {
         Endpoint entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("ENDPOINT", id);
+        references.requireUnreferenced(entity.getTenantId(), "ENDPOINT", id);
+        provisioning.renameOrDelete(entity.getTenantId(), entity.getExtension(), entity.getContext());
         repository.delete(entity);
         repository.flush();
         log.info("Endpoint deleted id={} tenantId={}", id, entity.getTenantId());

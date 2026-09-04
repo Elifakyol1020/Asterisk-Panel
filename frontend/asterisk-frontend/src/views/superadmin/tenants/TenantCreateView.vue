@@ -30,8 +30,8 @@ const {
   <EmptyState v-if="loading" loading />
   <div v-else-if="ready" class="form-layout">
     <form class="form-panel" @submit.prevent="save">
-      <h2>Yeni kayıt bilgileri</h2>
-      <p class="form-description">Yıldızlı alanlar zorunludur. Bilgileri doldurarak yeni kaydınızı oluşturun.</p>
+      <h2>Yeni kayıt</h2>
+      <p class="form-description">Yeni kayıt.</p>
       <div class="form-grid">
         <TenantFields :form="form" :errors="validation" :disabled="saving" />
       </div>
@@ -39,7 +39,7 @@ const {
     </form>
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
-      <h3>Yapılandırma notları</h3>
+      <h3>Notlar</h3>
       <p>Tenant’ı pasifleştirmek kurumun erişimini kapatır; kayıtlarını silmez.</p>
     </aside>
   </div>

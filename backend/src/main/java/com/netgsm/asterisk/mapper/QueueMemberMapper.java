@@ -18,6 +18,12 @@ public class QueueMemberMapper {
         return member;
     }
 
+    public void update(QueueMemberRequest request, QueueMember member) {
+        member.setEndpointId(request.endpointId());
+        member.setPenalty(request.penalty());
+        member.setPaused(request.paused());
+    }
+
     public QueueMemberResponse toResponse(QueueMember member) {
         return new QueueMemberResponse(
                 member.getId(),

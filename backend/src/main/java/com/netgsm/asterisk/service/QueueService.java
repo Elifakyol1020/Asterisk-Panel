@@ -8,6 +8,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.QueueMapper;
 import com.netgsm.asterisk.repository.QueueRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskQueueProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class QueueService {
     private final QueueRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final AsteriskQueueProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<QueueResponse> list(Long requestedTenantId, Pageable page) {
@@ -45,6 +47,7 @@ public class QueueService {
         Queue entity = mapper.toEntity(request, tenantId);
 
         repository.saveAndFlush(entity);
+        provisioning.upsertQueue(entity);
         log.info("Queue created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
     }
@@ -54,10 +57,13 @@ public class QueueService {
         Long tenantId = entity.getTenantId();
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndNameAndIdNot(tenantId, request.name(), id)) throw new DuplicateResourceException("Queue");
+        String oldName = entity.getName();
 
         mapper.update(request, entity);
 
         repository.flush();
+        if (!oldName.equals(entity.getName())) provisioning.renameOrDeleteQueue(tenantId, oldName);
+        provisioning.upsertQueue(entity);
         log.info("Queue updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }
@@ -65,7 +71,8 @@ public class QueueService {
     public void delete(Long id) {
         Queue entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("QUEUE", id);
+        references.requireUnreferenced(entity.getTenantId(), "QUEUE", id);
+        provisioning.renameOrDeleteQueue(entity.getTenantId(), entity.getName());
         repository.delete(entity);
         repository.flush();
         log.info("Queue deleted id={} tenantId={}", id, entity.getTenantId());

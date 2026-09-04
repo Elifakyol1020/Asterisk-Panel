@@ -1,0 +1,6 @@
+[asterisk]
+enabled => yes
+dsn => asterisk-postgres
+username => ${DB_USERNAME}
+password => ${DB_PASSWORD}
+pre-connect => yes

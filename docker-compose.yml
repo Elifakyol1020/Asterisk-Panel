@@ -17,6 +17,7 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4:9.17
     environment:
@@ -33,6 +34,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+
   backend:
     image: asterisk-backend:latest
     build: ./backend
@@ -42,16 +44,21 @@ services:
       DB_PORT: "5432"
       SERVER_PORT: "8080"
       CORS_ALLOWED_ORIGINS: "http://localhost:${FRONTEND_PORT:-3000},${CORS_ALLOWED_ORIGINS:-http://localhost:5173}"
+      ASTERISK_SOUNDS_PATH: /var/lib/asterisk/sounds
     ports:
       - "127.0.0.1:${SERVER_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      asterisk-db-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     stop_grace_period: 30s
     read_only: true
     tmpfs:
       - /tmp:rw,nosuid,nodev,size=256m,mode=1777
+    volumes:
+      - asterisk_sounds:/var/lib/asterisk/sounds
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     logging:
@@ -59,6 +66,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
   frontend:
     image: asterisk-frontend:latest
     build: ./frontend
@@ -67,6 +75,51 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  asterisk-db-init:
+    image: asterisk-pbx:local
+    build:
+      context: ./asterisk
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+    command: ["true"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  asterisk:
+    image: asterisk-pbx:local
+    container_name: asterisk-local
+
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+
+    ports:
+      - "5060:5060/udp"
+      - "10000-10100:10000-10100/udp"
+
+    volumes:
+      - asterisk_sounds:/var/lib/asterisk/sounds
+      - ./asterisk/config/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/config/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/config/extconfig.conf:/etc/asterisk/extconfig.conf:ro
+      - ./asterisk/config/sorcery.conf:/etc/asterisk/sorcery.conf:ro
+      - ./asterisk/config/modules.conf:/etc/asterisk/modules.conf:ro
+      - ./asterisk/config/logger.conf:/etc/asterisk/logger.conf:ro
+
+    depends_on:
+      asterisk-db-init:
+        condition: service_completed_successfully
+
+    restart: unless-stopped
+
 configs:
   pgadmin_servers:
     content: |
@@ -75,3 +128,4 @@ volumes:
   pgadmin_data:
   postgres_data:
     name: asterisk-local_postgres_data
+  asterisk_sounds:

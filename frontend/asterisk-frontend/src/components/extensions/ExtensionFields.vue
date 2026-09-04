@@ -53,7 +53,7 @@ const options = computed(() => props.targets.map(target => ({
   >
     <template #hint>
       <span v-if="!lookupLoading && !targets.length" class="form-hint">
-        {{ scope ? 'Bu tenant’ta seçilebilir hedef yok. Önce ilgili kaydı oluşturun.' : 'Hedefleri görmek için tenant seçin.' }}
+        {{ scope ? 'Bu tenant’ta hedef yok.' : 'Tenant seçin.' }}
       </span>
     </template>
   </FormField>

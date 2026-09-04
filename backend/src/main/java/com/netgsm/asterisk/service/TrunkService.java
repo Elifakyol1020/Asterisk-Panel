@@ -9,6 +9,7 @@ import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.TrunkMapper;
 import com.netgsm.asterisk.repository.TrunkRepository;
+import com.netgsm.asterisk.service.provisioning.AsteriskTrunkProvisioningService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class TrunkService {
     private final CurrentUserService current;
     private final ReferenceService references;
     private final PasswordEncoder passwords;
+    private final AsteriskTrunkProvisioningService provisioning;
 
     @Transactional(readOnly = true)
     public Page<TrunkResponse> list(Long requestedTenantId, Pageable page) {
@@ -50,6 +52,7 @@ public class TrunkService {
         entity.setContext(current.context(tenantId, "internal"));
         entity.setPasswordHash(hash(request.password()));
         repository.saveAndFlush(entity);
+        provisioning.upsert(entity, request.password());
         log.info("Trunk created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
     }
@@ -59,12 +62,18 @@ public class TrunkService {
         Long tenantId = entity.getTenantId();
         current.tenantForCreate(tenantId);
         if (repository.existsByTenantIdAndNameAndIdNot(tenantId, request.name(), id)) throw new DuplicateResourceException("Trunk");
+        String oldName = entity.getName();
+        if (!oldName.equals(request.name()) && request.password() == null) {
+            throw new BusinessRuleException("SIP password is required when changing a trunk name");
+        }
 
         mapper.update(request, entity);
 
         entity.setContext(current.context(tenantId, "internal"));
         if (request.password() != null) entity.setPasswordHash(hash(request.password()));
         repository.flush();
+        if (!oldName.equals(entity.getName())) provisioning.renameOrDelete(tenantId, oldName);
+        provisioning.upsert(entity, request.password());
         log.info("Trunk updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }
@@ -72,7 +81,8 @@ public class TrunkService {
     public void delete(Long id) {
         Trunk entity = find(id);
         current.tenantForCreate(entity.getTenantId());
-        references.requireUnreferenced("TRUNK", id);
+        references.requireUnreferenced(entity.getTenantId(), "TRUNK", id);
+        provisioning.renameOrDelete(entity.getTenantId(), entity.getName());
         repository.delete(entity);
         repository.flush();
         log.info("Trunk deleted id={} tenantId={}", id, entity.getTenantId());

@@ -34,13 +34,13 @@ const {
   <EmptyState v-if="loading" loading />
   <div v-else-if="ready" class="form-layout">
     <form class="form-panel" @submit.prevent="save">
-      <h2>Kayıt bilgilerini düzenle</h2>
-      <p class="form-description">Yıldızlı alanlar zorunludur. Değişiklikler kaydettikten sonra uygulanır.</p>
+      <h2>Kaydı düzenle</h2>
+      <p class="form-description">Kayıt bilgileri.</p>
       <div class="form-grid">
         <label v-if="tenantRequired" class="full">
           Tenant *
           <TenantSelect v-model="tenantId" :tenants="tenants" required :disabled="true" />
-          <span class="form-hint">Kaydın tenant’ı değiştirilemez.</span>
+          <span class="form-hint">Tenant değiştirilemez.</span>
         </label>
         <UserFields :form="form" :errors="validation" :disabled="saving" editing />
       </div>

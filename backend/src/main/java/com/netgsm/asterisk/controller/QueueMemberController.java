@@ -18,6 +18,7 @@ public class QueueMemberController {
     @GetMapping public Page<QueueMemberResponse> list(@PathVariable Long queueId, @ParameterObject Pageable page) { return service.list(queueId, page); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public QueueMemberResponse create(@PathVariable Long queueId, @Valid @RequestBody QueueMemberRequest request) { return service.create(queueId, request); }
+    @PutMapping("/{memberId}") public QueueMemberResponse update(@PathVariable Long queueId, @PathVariable Long memberId, @Valid @RequestBody QueueMemberRequest request) { return service.update(queueId, memberId, request); }
     @DeleteMapping("/{memberId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long queueId, @PathVariable Long memberId) { service.delete(queueId, memberId); }
 }

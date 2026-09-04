@@ -36,13 +36,13 @@ const {
   <EmptyState v-if="loading" loading />
   <div v-else-if="ready" class="form-layout">
     <form class="form-panel" @submit.prevent="save">
-      <h2>Kayıt bilgilerini düzenle</h2>
-      <p class="form-description">Yıldızlı alanlar zorunludur. Değişiklikler kaydettikten sonra uygulanır.</p>
+      <h2>Kaydı düzenle</h2>
+      <p class="form-description">Kayıt bilgileri.</p>
       <div class="form-grid">
         <label v-if="tenantRequired" class="full">
           Tenant *
           <TenantSelect v-model="tenantId" :tenants="tenants" required :disabled="true" />
-          <span class="form-hint">Kaydın tenant’ı değiştirilemez.</span>
+          <span class="form-hint">Tenant değiştirilemez.</span>
         </label>
         <QueueFields :form="form" :errors="validation" :disabled="saving" editing />
       </div>
@@ -50,9 +50,8 @@ const {
     </form>
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
-      <h3>Yapılandırma notları</h3>
-      <p>Hedef kayıtlar aynı tenant’a ait olmalıdır. Santral bağlamı (context) backend tarafından oluşturulur.</p>
-      <p>Değişiklikler uygulama veritabanına kaydedilir. Kayıt oluşturulması, canlı santral üzerinde etkinleştirildiği anlamına gelmez.</p>
+      <h3>Notlar</h3>
+      <p>Kayıt seçili tenant kapsamında saklanır.</p>
       <h3>Bağlı kayıtlar</h3>
       <RouterLink :to="url(`${prefix}/queues/${route.params.id}/members`)" class="text-link">Kuyruk üyeleri<AppIcon name="arrow" :size="15" /></RouterLink>
     </aside>

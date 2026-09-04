@@ -34,13 +34,13 @@ const {
   <EmptyState v-if="loading" loading />
   <div v-else-if="ready" class="form-layout">
     <form class="form-panel" @submit.prevent="save">
-      <h2>Yeni kayıt bilgileri</h2>
-      <p class="form-description">Yıldızlı alanlar zorunludur. Bilgileri doldurarak yeni kaydınızı oluşturun.</p>
+      <h2>Yeni kayıt</h2>
+      <p class="form-description">Yeni kayıt.</p>
       <div class="form-grid">
         <label v-if="tenantRequired" class="full">
           Tenant *
           <TenantSelect v-model="tenantId" :tenants="tenants" required :disabled="saving" />
-          <span class="form-hint">Santral kaydı oluşturmak için aktif bir tenant seçin.</span>
+          <span class="form-hint">Aktif bir tenant seçin.</span>
         </label>
         <TrunkFields :form="form" :errors="validation" :disabled="saving" />
       </div>
@@ -48,9 +48,8 @@ const {
     </form>
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
-      <h3>Yapılandırma notları</h3>
-      <p>Hedef kayıtlar aynı tenant’a ait olmalıdır. Santral bağlamı (context) backend tarafından oluşturulur.</p>
-      <p>Değişiklikler uygulama veritabanına kaydedilir. Kayıt oluşturulması, canlı santral üzerinde etkinleştirildiği anlamına gelmez.</p>
+      <h3>Notlar</h3>
+      <p>Kayıt seçili tenant kapsamında saklanır.</p>
     </aside>
   </div>
 </template>
