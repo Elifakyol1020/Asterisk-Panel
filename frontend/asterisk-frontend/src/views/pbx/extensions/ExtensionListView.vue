@@ -69,11 +69,11 @@ const {
           <tr v-for="row in visibleRows" :key="String(row.id)">
             <td><RecordIdentity :name="row.name" :id="row.id" icon="route" /></td>
             <td>{{ displayValue(row.extensionNumber, 'extensionNumber') }}</td>
-            <td>{{ displayValue(row.targetType, 'targetType') }}</td>
+            <td>{{ row.targetType === 'DIALPLAN' ? 'Gelişmiş akış' : displayValue(row.targetType, 'targetType') }}</td>
             <td><StatusBadge :value="row.enabled" field="enabled" /></td>
             <td v-if="auth.isSuperAdmin">#{{ row.tenantId }}</td>
             <td><div class="actions">
-              <RouterLink :to="url(`${basePath}/${row.id}/edit`)" class="icon-button" :aria-label="`${row.name} düzenle`"><AppIcon name="edit" :size="17" /></RouterLink>
+              <RouterLink v-if="row.targetType !== 'DIALPLAN'" :to="url(`${basePath}/${row.id}/edit`)" class="icon-button" :aria-label="`${row.name} düzenle`"><AppIcon name="edit" :size="17" /></RouterLink>
               <button class="icon-button" :aria-label="`${row.name} sil`" @click="deleteTarget = row"><AppIcon name="trash" :size="17" /></button>
             </div></td>
           </tr>

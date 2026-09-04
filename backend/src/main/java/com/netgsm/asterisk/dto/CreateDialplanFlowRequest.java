@@ -10,6 +10,7 @@ import java.util.List;
 
 public record CreateDialplanFlowRequest(
         Long tenantId,
+        @NotBlank @Size(max = 120) String name,
         @NotBlank @Pattern(regexp = "[0-9]{1,20}") String extension,
         @NotNull Boolean enabled,
         @NotEmpty @Size(max = 50) List<@Valid DialplanStepRequest> steps) { }

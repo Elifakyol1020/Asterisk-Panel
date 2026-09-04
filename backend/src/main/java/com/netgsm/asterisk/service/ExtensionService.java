@@ -79,7 +79,14 @@ public class ExtensionService {
         current.tenantForCreate(entity.getTenantId());
         references.requireUnreferenced(entity.getTenantId(), "EXTENSION", id);
 
-        provisioning.deleteExtensionRoute(entity);
+        if ("DIALPLAN".equals(entity.getTargetType())) {
+            var rows = dialplans.findAllByTenantIdAndExtensionOrderByPriorityAsc(entity.getTenantId(), entity.getExtensionNumber());
+            rows.forEach(provisioning::deleteDialplan);
+            dialplans.deleteAll(rows);
+            dialplans.flush();
+        } else {
+            provisioning.deleteExtensionRoute(entity);
+        }
         repository.delete(entity);
         repository.flush();
         log.info("Extension deleted id={} tenantId={}", id, entity.getTenantId());

@@ -4,6 +4,7 @@ import com.netgsm.asterisk.dto.CreateDialplanRequest;
 import com.netgsm.asterisk.dto.DialplanResponse;
 import com.netgsm.asterisk.dto.UpdateDialplanRequest;
 import com.netgsm.asterisk.entity.Dialplan;
+import com.netgsm.asterisk.entity.Extension;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.DialplanMapper;
@@ -78,6 +79,15 @@ public class DialplanService {
             rows.add(row);
         }
         repository.saveAllAndFlush(rows);
+        Extension extension = new Extension();
+        extension.setTenantId(tenantId);
+        extension.setExtensionNumber(request.extension());
+        extension.setName(request.name());
+        extension.setTargetType("DIALPLAN");
+        extension.setTargetId(rows.getFirst().getId());
+        extension.setEnabled(request.enabled());
+        extension.setContext(current.context(tenantId, "internal"));
+        extensions.saveAndFlush(extension);
         rows.forEach(provisioning::upsertDialplan);
         log.info("Dialplan flow created extension={} steps={} tenantId={}", request.extension(), rows.size(), tenantId);
         return rows.stream().map(mapper::toResponse).toList();

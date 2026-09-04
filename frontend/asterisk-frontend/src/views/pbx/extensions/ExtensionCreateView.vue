@@ -66,6 +66,7 @@ async function submit() {
   try {
     await api.post('/dialplans/flow', {
       tenantId: scope.value,
+      name: String(form.name),
       extension: String(form.extensionNumber),
       enabled: Boolean(form.enabled),
       steps: steps.value.map(step => ({ application: step.application, applicationData: requiresData(step.application) ? step.applicationData : '' })),
@@ -98,6 +99,7 @@ async function submit() {
         </label>
         <ExtensionFields v-if="mode === 'target'" :form="form" :errors="validation" :disabled="saving" :targets="targets" :lookup-loading="lookupLoading" :scope="scope" />
         <template v-else>
+          <label>Dahili adı *<input v-model="form.name" required maxlength="120" /></label>
           <label>Dahili numarası *<input v-model="form.extensionNumber" required pattern="[0-9]{1,20}" /></label>
           <label class="checkbox"><input v-model="form.enabled" type="checkbox" /> Aktif</label>
         </template>

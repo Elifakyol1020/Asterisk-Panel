@@ -36,6 +36,7 @@ public class AsteriskProvisioningReconciler implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        backfillFlowExtensions();
         endpoints.findAll().forEach(endpoint -> endpointProvisioning.upsert(endpoint, null));
         trunks.findAll().forEach(trunk -> trunkProvisioning.upsert(trunk, null));
         queues.findAll().forEach(queueProvisioning::upsertQueue);
@@ -45,8 +46,29 @@ public class AsteriskProvisioningReconciler implements ApplicationRunner {
             queueProvisioning.upsertMember(queue, member, endpoint);
         });
         ivrs.findAll().forEach(dialplanProvisioning::recompileIvr);
-        extensions.findAll().forEach(dialplanProvisioning::upsertExtensionRoute);
+        extensions.findAll().stream()
+                .filter(extension -> !"DIALPLAN".equals(extension.getTargetType()))
+                .forEach(dialplanProvisioning::upsertExtensionRoute);
         dialplans.findAll().forEach(dialplanProvisioning::upsertDialplan);
         log.info("Asterisk Realtime provisioning reconciled with tenant-specific contexts");
+    }
+
+    private void backfillFlowExtensions() {
+        dialplans.findAll().stream()
+                .collect(java.util.stream.Collectors.groupingBy(row -> row.getTenantId() + ":" + row.getExtension()))
+                .values().forEach(rows -> {
+                    var first = rows.stream().min(java.util.Comparator.comparing(com.netgsm.asterisk.entity.Dialplan::getPriority)).orElseThrow();
+                    if (extensions.existsByTenantIdAndExtensionNumber(first.getTenantId(), first.getExtension())) return;
+                    var extension = new com.netgsm.asterisk.entity.Extension();
+                    extension.setTenantId(first.getTenantId());
+                    extension.setExtensionNumber(first.getExtension());
+                    extension.setName("Gelişmiş akış " + first.getExtension());
+                    extension.setTargetType("DIALPLAN");
+                    extension.setTargetId(first.getId());
+                    extension.setEnabled(rows.stream().anyMatch(row -> Boolean.TRUE.equals(row.getEnabled())));
+                    extension.setContext(first.getContext());
+                    extensions.save(extension);
+                });
+        extensions.flush();
     }
 }
