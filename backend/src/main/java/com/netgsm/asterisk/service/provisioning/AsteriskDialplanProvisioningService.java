@@ -35,46 +35,58 @@ public class AsteriskDialplanProvisioningService {
     private final IvrOptionRepository options;
 
     public void upsertDialplan(Dialplan dialplan) {
-        String exten = naming.dialplanExtension(dialplan.getTenantId(), dialplan.getExtension());
-        realtime.deleteAllByContextAndExtenAndPriority(naming.realtimeContext(), exten, dialplan.getPriority());
+        String context = naming.tenantContext(dialplan.getTenantId());
+        String exten = dialplan.getExtension();
+        realtime.deleteAllByContextAndExtenAndPriority("realtime",
+                naming.tenantPrefix(dialplan.getTenantId()) + "_" + naming.safe(exten), dialplan.getPriority());
+        realtime.deleteAllByContextAndExtenAndPriority(context, exten, dialplan.getPriority());
         realtime.flush();
         if (Boolean.TRUE.equals(dialplan.getEnabled())) {
-            save(naming.realtimeContext(), exten, dialplan.getPriority(), dialplan.getApplication(), dialplan.getApplicationData());
+            save(context, exten, dialplan.getPriority(), dialplan.getApplication(), dialplan.getApplicationData());
         }
     }
 
     public void deleteDialplan(Dialplan dialplan) {
-        realtime.deleteAllByContextAndExtenAndPriority(naming.realtimeContext(),
-                naming.dialplanExtension(dialplan.getTenantId(), dialplan.getExtension()), dialplan.getPriority());
+        realtime.deleteAllByContextAndExtenAndPriority(naming.tenantContext(dialplan.getTenantId()),
+                dialplan.getExtension(), dialplan.getPriority());
+        realtime.deleteAllByContextAndExtenAndPriority("realtime",
+                naming.tenantPrefix(dialplan.getTenantId()) + "_" + naming.safe(dialplan.getExtension()),
+                dialplan.getPriority());
         realtime.flush();
     }
 
     public void upsertExtensionRoute(Extension extension) {
-        String exten = naming.dialplanExtension(extension.getTenantId(), extension.getExtensionNumber());
-        realtime.deleteAllByContextAndExten(naming.realtimeContext(), exten);
+        String context = naming.tenantContext(extension.getTenantId());
+        String exten = extension.getExtensionNumber();
+        realtime.deleteAllByContextAndExten("realtime",
+                naming.tenantPrefix(extension.getTenantId()) + "_" + naming.safe(exten));
+        realtime.deleteAllByContextAndExten(context, exten);
         realtime.flush();
         if (!Boolean.TRUE.equals(extension.getEnabled())) return;
-        log.info("Creating Asterisk route: {}/{}", naming.realtimeContext(), exten);
-        save(naming.realtimeContext(), exten, 1, "NoOp", "Calling route " + extension.getExtensionNumber());
+        log.info("Creating Asterisk route: {}/{}", context, exten);
+        save(context, exten, 1, "NoOp", "Calling route " + extension.getExtensionNumber());
         Target target = target(extension.getTenantId(), extension.getTargetType(), extension.getTargetId());
         int targetPriority = 2;
         if ("QUEUE".equals(extension.getTargetType())) {
-            save(naming.realtimeContext(), exten, targetPriority++, "MixMonitor",
+            save(context, exten, targetPriority++, "MixMonitor",
                     "tenant" + extension.getTenantId() + "-${UNIQUEID}-${CALLERID(num)}-" + extension.getExtensionNumber() + ".wav,b");
         }
-        save(naming.realtimeContext(), exten, targetPriority, target.app(), target.appdata());
-        if (!"Goto".equals(target.app())) save(naming.realtimeContext(), exten, targetPriority + 1, "Hangup", "");
+        save(context, exten, targetPriority, target.app(), target.appdata());
+        if (!"Goto".equals(target.app())) save(context, exten, targetPriority + 1, "Hangup", "");
     }
 
     public void deleteExtensionRoute(Extension extension) {
-        realtime.deleteAllByContextAndExten(naming.realtimeContext(),
-                naming.dialplanExtension(extension.getTenantId(), extension.getExtensionNumber()));
+        realtime.deleteAllByContextAndExten(naming.tenantContext(extension.getTenantId()),
+                extension.getExtensionNumber());
+        realtime.deleteAllByContextAndExten("realtime", naming.tenantPrefix(extension.getTenantId())
+                + "_" + naming.safe(extension.getExtensionNumber()));
         realtime.flush();
     }
 
     public void recompileIvr(Ivr ivr) {
-        String context = naming.realtimeContext();
+        String context = naming.tenantContext(ivr.getTenantId());
         String ivrExten = naming.ivrContext(ivr.getTenantId(), ivr.getName());
+        deleteIvrRows("realtime", ivrExten);
         realtime.deleteAllByContextAndExten(context, ivrExten);
         realtime.deleteAllByContextAndExtenStartingWith(context, ivrExten + "_");
         realtime.deleteAllByContextAndExten(context, "_" + ivrExten + "_.");
@@ -108,9 +120,11 @@ public class AsteriskDialplanProvisioningService {
 
     public void deleteIvr(Ivr ivr) {
         String ivrExten = naming.ivrContext(ivr.getTenantId(), ivr.getName());
-        realtime.deleteAllByContextAndExten(naming.realtimeContext(), ivrExten);
-        realtime.deleteAllByContextAndExtenStartingWith(naming.realtimeContext(), ivrExten + "_");
-        realtime.deleteAllByContextAndExten(naming.realtimeContext(), "_" + ivrExten + "_.");
+        String context = naming.tenantContext(ivr.getTenantId());
+        deleteIvrRows("realtime", ivrExten);
+        realtime.deleteAllByContextAndExten(context, ivrExten);
+        realtime.deleteAllByContextAndExtenStartingWith(context, ivrExten + "_");
+        realtime.deleteAllByContextAndExten(context, "_" + ivrExten + "_.");
         realtime.flush();
     }
 
@@ -123,8 +137,8 @@ public class AsteriskDialplanProvisioningService {
             case "EXTENSION" -> {
                 Extension extension = extensions.findByIdAndTenantId(id, tenantId)
                         .orElseThrow(() -> new ResourceNotFoundException("Extension"));
-                yield new Target("Goto", naming.realtimeContext() + ","
-                        + naming.dialplanExtension(tenantId, extension.getExtensionNumber()) + ",1");
+                yield new Target("Goto", naming.tenantContext(tenantId) + ","
+                        + extension.getExtensionNumber() + ",1");
             }
             case "QUEUE" -> {
                 Queue queue = queues.findByIdAndTenantId(id, tenantId).orElseThrow(() -> new ResourceNotFoundException("Queue"));
@@ -132,7 +146,7 @@ public class AsteriskDialplanProvisioningService {
             }
             case "IVR" -> {
                 Ivr ivr = ivrs.findByIdAndTenantId(id, tenantId).orElseThrow(() -> new ResourceNotFoundException("Ivr"));
-                yield new Target("Goto", naming.realtimeContext() + "," + naming.ivrContext(tenantId, ivr.getName()) + ",1");
+                yield new Target("Goto", naming.tenantContext(tenantId) + "," + naming.ivrContext(tenantId, ivr.getName()) + ",1");
             }
             case "TRUNK" -> {
                 Trunk trunk = trunks.findByIdAndTenantId(id, tenantId).orElseThrow(() -> new ResourceNotFoundException("Trunk"));
@@ -151,6 +165,12 @@ public class AsteriskDialplanProvisioningService {
         row.setApp(app);
         row.setAppdata(appdata);
         realtime.save(row);
+    }
+
+    private void deleteIvrRows(String context, String ivrExten) {
+        realtime.deleteAllByContextAndExten(context, ivrExten);
+        realtime.deleteAllByContextAndExtenStartingWith(context, ivrExten + "_");
+        realtime.deleteAllByContextAndExten(context, "_" + ivrExten + "_.");
     }
 
     private void compileInvalidIvrChoice(String context, String exten, String ivrExten, int maxAttempts) {

@@ -1,5 +1,5 @@
--- H2-only projection tables. Production ps_* tables are installed from the
--- exact Asterisk release by the asterisk-db-init service.
+-- H2-only projection tables. Production ps_* tables must be installed from the
+-- exact Asterisk release used by the external PBX.
 CREATE TABLE ps_aors (
     id VARCHAR(255) PRIMARY KEY, contact VARCHAR(255), max_contacts INTEGER,
     remove_existing VARCHAR(10), qualify_frequency INTEGER

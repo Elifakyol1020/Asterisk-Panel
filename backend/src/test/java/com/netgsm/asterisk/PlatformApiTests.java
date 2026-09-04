@@ -260,8 +260,10 @@ class PlatformApiTests {
         assertThat(psAors.findById("tenant" + first.getId() + "_1001")).isPresent();
         assertThat(psAuths.findById("tenant" + first.getId() + "_1001_auth").orElseThrow().getUsername()).isEqualTo("tenant" + first.getId() + "_1001");
         assertThat(psAuths.findById("tenant" + first.getId() + "_1001_auth").orElseThrow().getPassword()).isEqualTo("sip-password-123");
-        assertThat(psEndpoints.findById("tenant" + first.getId() + "_1001").orElseThrow().getAors()).isEqualTo("tenant" + first.getId() + "_1001");
-        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_1001"))
+        var realtimeEndpoint = psEndpoints.findById("tenant" + first.getId() + "_1001").orElseThrow();
+        assertThat(realtimeEndpoint.getAors()).isEqualTo("tenant" + first.getId() + "_1001");
+        assertThat(realtimeEndpoint.getContext()).isEqualTo("tenant_" + first.getId() + "_internal");
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("tenant_" + first.getId() + "_internal", "1001"))
                 .extracting("app").containsExactly("NoOp", "Dial", "Hangup");
 
         mvc.perform(post("/api/trunks").header("Authorization", bearer(firstAdmin))
@@ -269,7 +271,8 @@ class PlatformApiTests {
                         "name", "eren", "host", "192.0.2.20", "port", 5060, "username", "sip-user",
                         "transport", "transport-udp", "enabled", true, "password", "sip-password-123"))))
                 .andExpect(status().isCreated());
-        assertThat(psEndpoints.findById("tenant" + first.getId() + "_trunk_eren")).isPresent();
+        assertThat(psEndpoints.findById("tenant" + first.getId() + "_trunk_eren").orElseThrow().getContext())
+                .isEqualTo("tenant_" + first.getId() + "_internal");
         assertThat(psAors.findById("tenant" + first.getId() + "_trunk_eren").orElseThrow().getContact()).isEqualTo("sip:192.0.2.20:5060");
         assertThat(psIdentifies.findById("tenant" + first.getId() + "_trunk_eren_identify").orElseThrow().getMatchValue()).isEqualTo("192.0.2.20");
 
@@ -279,7 +282,9 @@ class PlatformApiTests {
                         "wrapupTime", 15, "maxLength", 0, "musicOnHold", "default", "enabled", true))))
                 .andExpect(status().isCreated());
         Queue queue = queues.findAll().stream().filter(row -> row.getTenantId().equals(first.getId())).findFirst().orElseThrow();
-        assertThat(realtimeQueues.findById("tenant" + first.getId() + "_support").orElseThrow().getWrapuptime()).isEqualTo(15);
+        var realtimeQueue = realtimeQueues.findById("tenant" + first.getId() + "_support").orElseThrow();
+        assertThat(realtimeQueue.getWrapuptime()).isEqualTo(15);
+        assertThat(realtimeQueue.getContext()).isEqualTo("tenant_" + first.getId() + "_internal");
 
         Endpoint endpoint = endpoints.findAll().stream().filter(row -> row.getTenantId().equals(first.getId())).findFirst().orElseThrow();
         mvc.perform(post("/api/queues/" + queue.getId() + "/members").header("Authorization", bearer(firstAdmin))
@@ -292,14 +297,14 @@ class PlatformApiTests {
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
                         "extensionNumber", "2001", "name", "Support route", "targetType", "QUEUE", "targetId", queue.getId(), "enabled", true))))
                 .andExpect(status().isCreated());
-        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_2001"))
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("tenant_" + first.getId() + "_internal", "2001"))
                 .extracting("app", "appdata").contains(org.assertj.core.groups.Tuple.tuple("Queue", "tenant" + first.getId() + "_support"));
 
         mvc.perform(post("/api/dialplans").header("Authorization", bearer(firstAdmin))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
                         "extension", "3001", "priority", 1, "application", "Playback", "applicationData", "welcome", "enabled", true))))
                 .andExpect(status().isCreated());
-        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_3001"))
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("tenant_" + first.getId() + "_internal", "3001"))
                 .extracting("appdata").containsExactly("welcome");
 
         mvc.perform(post("/api/ivrs").header("Authorization", bearer(firstAdmin))
@@ -309,9 +314,9 @@ class PlatformApiTests {
         mvc.perform(post("/api/ivrs/" + ivr.getId() + "/options").header("Authorization", bearer(firstAdmin))
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("digit", "2", "actionType", "QUEUE", "targetId", queue.getId()))))
                 .andExpect(status().isCreated());
-        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_ivr_main"))
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("tenant_" + first.getId() + "_internal", "tenant" + first.getId() + "_ivr_main"))
                 .extracting("app").containsExactly("Answer", "Set", "Read", "GotoIf", "Goto");
-        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("realtime", "tenant" + first.getId() + "_ivr_main_2"))
+        assertThat(realtimeExtensions.findAllByContextAndExtenOrderByPriorityAsc("tenant_" + first.getId() + "_internal", "tenant" + first.getId() + "_ivr_main_2"))
                 .extracting("app", "appdata").contains(
                         org.assertj.core.groups.Tuple.tuple("Queue", "tenant" + first.getId() + "_support"));
     }

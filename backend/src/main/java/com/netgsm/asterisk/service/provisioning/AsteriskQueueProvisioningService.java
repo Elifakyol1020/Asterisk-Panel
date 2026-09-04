@@ -26,7 +26,7 @@ public class AsteriskQueueProvisioningService {
         AsteriskQueue realtime = new AsteriskQueue();
         realtime.setName(name);
         realtime.setMusicOnHold(queue.getMusicOnHold());
-        realtime.setContext(naming.routerContext());
+        realtime.setContext(naming.tenantContext(queue.getTenantId()));
         realtime.setTimeout(queue.getTimeout());
         realtime.setRetry(queue.getRetry());
         realtime.setWrapuptime(queue.getWrapupTime());

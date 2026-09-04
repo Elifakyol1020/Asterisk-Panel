@@ -29,9 +29,11 @@ public class AsteriskEndpointProvisioningService {
     public void upsert(Endpoint endpoint, String sipPassword) {
         String id = naming.endpoint(endpoint.getTenantId(), endpoint.getExtension());
         String authId = naming.endpointAuth(endpoint.getTenantId(), endpoint.getExtension());
-        String context = endpoint.getContext();
-        String realtimeExten = naming.dialplanExtension(endpoint.getTenantId(), endpoint.getExtension());
+        String context = naming.tenantContext(endpoint.getTenantId());
+        String realtimeExten = endpoint.getExtension();
         log.info("Creating Asterisk endpoint: {}", id);
+
+        dialplan.deleteAllByContextAndExten("realtime", id);
 
         PsAor aor = new PsAor();
         aor.setId(id);
@@ -54,7 +56,7 @@ public class AsteriskEndpointProvisioningService {
         ps.setTransport("transport-udp");
         ps.setAors(id);
         ps.setAuth(authId);
-        ps.setContext(naming.routerContext());
+        ps.setContext(context);
         ps.setDisallow("all");
         ps.setAllow(endpoint.getCodecs());
         ps.setDirectMedia("no");
@@ -65,11 +67,11 @@ public class AsteriskEndpointProvisioningService {
         ps.setSetVar("TENANT_ID=" + endpoint.getTenantId());
         realtimeWriter.upsertEndpoint(ps);
 
-        dialplan.deleteAllByContextAndExten(naming.realtimeContext(), realtimeExten);
+        dialplan.deleteAllByContextAndExten(context, realtimeExten);
         if (Boolean.TRUE.equals(endpoint.getEnabled())) {
-            saveDialplan(naming.realtimeContext(), realtimeExten, 1, "NoOp", "Calling endpoint " + id);
-            saveDialplan(naming.realtimeContext(), realtimeExten, 2, "Dial", "PJSIP/" + id + ",20");
-            saveDialplan(naming.realtimeContext(), realtimeExten, 3, "Hangup", "");
+            saveDialplan(context, realtimeExten, 1, "NoOp", "Calling endpoint " + id);
+            saveDialplan(context, realtimeExten, 2, "Dial", "PJSIP/" + id + ",20");
+            saveDialplan(context, realtimeExten, 3, "Hangup", "");
         }
     }
 
@@ -79,7 +81,8 @@ public class AsteriskEndpointProvisioningService {
         endpoints.deleteById(id);
         auths.deleteById(naming.endpointAuth(tenantId, oldExtension));
         aors.deleteById(id);
-        dialplan.deleteAllByContextAndExten(naming.realtimeContext(), naming.dialplanExtension(tenantId, oldExtension));
+        dialplan.deleteAllByContextAndExten(naming.tenantContext(tenantId), oldExtension);
+        dialplan.deleteAllByContextAndExten("realtime", id);
     }
 
     private void saveDialplan(String context, String exten, int priority, String app, String appdata) {

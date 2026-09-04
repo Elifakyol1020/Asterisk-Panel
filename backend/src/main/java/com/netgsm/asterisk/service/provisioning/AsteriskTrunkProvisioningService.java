@@ -53,7 +53,7 @@ public class AsteriskTrunkProvisioningService {
         boolean hasAuth = sipPassword != null || auths.existsById(authId);
         endpoint.setAuth(hasAuth ? authId : null);
         endpoint.setOutboundAuth(hasAuth ? authId : null);
-        endpoint.setContext(naming.routerContext());
+        endpoint.setContext(naming.tenantContext(trunk.getTenantId()));
         endpoint.setDisallow("all");
         endpoint.setAllow("ulaw,alaw");
         endpoint.setDirectMedia("no");

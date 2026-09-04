@@ -34,18 +34,9 @@ public class AsteriskNaming {
         return tenantPrefix(tenantId) + "_ivr_" + safe(name);
     }
 
-    /** Static context entered by every tenant-aware PJSIP channel. */
-    public String routerContext() {
-        return "tenant-router";
-    }
-
-    /** Context backed by the public.extensions realtime table. */
-    public String realtimeContext() {
-        return "realtime";
-    }
-
-    public String dialplanExtension(Long tenantId, String extension) {
-        return tenantPrefix(tenantId) + "_" + safe(extension);
+    /** Realtime dialplan context isolated to one tenant. */
+    public String tenantContext(Long tenantId) {
+        return "tenant_" + tenantId + "_internal";
     }
 
     public String tenantPrefix(Long tenantId) {
