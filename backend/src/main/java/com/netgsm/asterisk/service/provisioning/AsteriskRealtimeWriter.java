@@ -6,6 +6,7 @@ import com.netgsm.asterisk.asterisk.realtime.entity.PsAor;
 import com.netgsm.asterisk.asterisk.realtime.entity.PsAuth;
 import com.netgsm.asterisk.asterisk.realtime.entity.PsEndpoint;
 import com.netgsm.asterisk.asterisk.realtime.entity.PsEndpointIdIp;
+import com.netgsm.asterisk.asterisk.realtime.entity.AsteriskExtension;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,25 @@ import java.sql.SQLException;
 public class AsteriskRealtimeWriter {
     private final JdbcTemplate jdbc;
     private final DataSource dataSource;
+
+    public void upsertExtension(AsteriskExtension extension) {
+        if (!isPostgres()) {
+            jdbc.update("""
+                    merge into extensions (context, exten, priority, app, appdata)
+                    key(context, exten, priority) values (?, ?, ?, ?, ?)
+                    """, extension.getContext(), extension.getExten(), extension.getPriority(),
+                    extension.getApp(), extension.getAppdata());
+            return;
+        }
+        jdbc.update("""
+                insert into extensions (context, exten, priority, app, appdata)
+                values (?, ?, ?, ?, ?)
+                on conflict (context, exten, priority) do update set
+                  app = excluded.app,
+                  appdata = excluded.appdata
+                """, extension.getContext(), extension.getExten(), extension.getPriority(),
+                extension.getApp(), extension.getAppdata());
+    }
 
     public void upsertAor(PsAor aor) {
         if (!isPostgres()) {

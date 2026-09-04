@@ -68,6 +68,7 @@ public class AsteriskEndpointProvisioningService {
         realtimeWriter.upsertEndpoint(ps);
 
         dialplan.deleteAllByContextAndExten(context, realtimeExten);
+        dialplan.flush();
         if (Boolean.TRUE.equals(endpoint.getEnabled())) {
             saveDialplan(context, realtimeExten, 1, "NoOp", "Calling endpoint " + id);
             saveDialplan(context, realtimeExten, 2, "Dial", "PJSIP/" + id + ",20");
@@ -92,6 +93,6 @@ public class AsteriskEndpointProvisioningService {
         row.setPriority(priority);
         row.setApp(app);
         row.setAppdata(appdata);
-        dialplan.save(row);
+        realtimeWriter.upsertExtension(row);
     }
 }

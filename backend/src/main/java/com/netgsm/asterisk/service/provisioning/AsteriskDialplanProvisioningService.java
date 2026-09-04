@@ -33,6 +33,7 @@ public class AsteriskDialplanProvisioningService {
     private final TrunkRepository trunks;
     private final ExtensionRepository extensions;
     private final IvrOptionRepository options;
+    private final AsteriskRealtimeWriter realtimeWriter;
 
     public void upsertDialplan(Dialplan dialplan) {
         String context = naming.tenantContext(dialplan.getTenantId());
@@ -164,7 +165,7 @@ public class AsteriskDialplanProvisioningService {
         row.setPriority(priority);
         row.setApp(app);
         row.setAppdata(appdata);
-        realtime.save(row);
+        realtimeWriter.upsertExtension(row);
     }
 
     private void deleteIvrRows(String context, String ivrExten) {
