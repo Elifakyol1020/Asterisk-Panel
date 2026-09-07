@@ -313,3 +313,39 @@ test('Live backend OpenAPI matches all frontend request fields and operation pat
   assert.deepEqual(Object.keys(schemas.LoginRequest.properties).sort(), ['email', 'password'])
   assert.deepEqual(Object.keys(schemas.LoginResponse.properties).sort(), ['accessToken', 'tokenType'])
 })
+
+test('Theme: preference persists, follows system changes and syncs other tabs', () => {
+  const media = { matches: false, addEventListener: (_, callback) => { media.change = callback } }
+  const root = { dataset: {} }
+  const storage = new Map([['netgsm-theme', 'dark']])
+  const listeners = {}
+  const { useTheme } = load('src/composables/useTheme.ts', {}, {
+    window: { matchMedia: () => media, addEventListener: (name, callback) => { listeners[name] = callback } },
+    document: { documentElement: root, querySelector: () => null },
+    localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
+  })
+  const theme = useTheme()
+  assert.equal(root.dataset.theme, 'dark')
+  theme.setTheme('light')
+  assert.equal(root.dataset.theme, 'light')
+  assert.equal(storage.get('netgsm-theme'), 'light')
+  theme.setTheme('system')
+  media.matches = true
+  media.change()
+  assert.equal(root.dataset.theme, 'dark')
+  listeners.storage({ key: 'netgsm-theme', newValue: 'light' })
+  assert.equal(root.dataset.theme, 'light')
+  theme.setTheme('invalid')
+  assert.equal(theme.preference.value, 'light')
+})
+
+test('Theme: blocked browser storage does not prevent switching', () => {
+  const root = { dataset: {} }
+  const { useTheme } = load('src/composables/useTheme.ts', {}, {
+    window: { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {} },
+    document: { documentElement: root, querySelector: () => null },
+    localStorage: { getItem() { throw Error('blocked') }, setItem() { throw Error('blocked') } },
+  })
+  useTheme().setTheme('dark')
+  assert.equal(root.dataset.theme, 'dark')
+})

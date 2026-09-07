@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Netgsm Asterisk santral platformu: tenant, kullanıcı ve santral kaynaklarının merkezi yönetimi.">
     <meta name="theme-color" content="#111e31">
+    <script>
+      try {
+        const theme = localStorage.getItem('netgsm-theme');
+        document.documentElement.dataset.theme = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      } catch { document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+    </script>
     <title>Santral Yönetimi · Netgsm</title>
   </head>
   <body>

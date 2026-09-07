@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { errorMessage } from '@/api/platform'
+import ThemePicker from '@/components/common/ThemePicker.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 const auth = useAuthStore(), router = useRouter(), route = useRoute()
 const loading = ref(false), error = ref(''), showPassword = ref(false)
@@ -24,7 +25,7 @@ async function submit() {
       <div class="story-features"><span><AppIcon name="shield" :size="17" /> Rol bazlı erişim</span><span><AppIcon name="network" :size="17" /> Çoklu tenant yönetimi</span></div></div>
       <div class="story-footer">NETGSM <span>Kurumsal iletişim, sadeleşti.</span></div>
     </aside>
-    <section class="login-main"><div class="login-form-wrap"><span class="login-symbol"><AppIcon name="lock" :size="25" /></span><p class="eyebrow">YÖNETİM PANELİ</p><h2>Tekrar hoş geldiniz.</h2><p class="muted">Devam etmek için hesabınıza giriş yapın.</p>
+    <section class="login-main"><div class="login-theme"><ThemePicker /></div><div class="login-form-wrap"><span class="login-symbol"><AppIcon name="lock" :size="25" /></span><p class="eyebrow">YÖNETİM PANELİ</p><h2>Tekrar hoş geldiniz.</h2><p class="muted">Devam etmek için hesabınıza giriş yapın.</p>
       <form @submit.prevent="submit"><label for="email">E-posta adresi<input id="email" v-model="form.email" type="email" required maxlength="254" autocomplete="username" placeholder="ornek@sirketiniz.com" :disabled="loading" /></label>
       <label for="password">Şifre<span class="password-field"><input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'" required maxlength="72" autocomplete="current-password" placeholder="Şifrenizi girin" :disabled="loading" /><button type="button" class="icon-button" :aria-label="showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><AppIcon name="eye" /></button></span></label>
       <p v-if="route.query.expired && !error" class="notice">Oturumunuz sona erdi. Lütfen yeniden giriş yapın.</p><p v-if="error" class="form-error" role="alert">{{ error }}</p>
