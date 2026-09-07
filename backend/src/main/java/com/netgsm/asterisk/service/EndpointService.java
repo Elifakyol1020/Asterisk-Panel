@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateEndpointRequest;
-import com.netgsm.asterisk.dto.EndpointResponse;
-import com.netgsm.asterisk.dto.UpdateEndpointRequest;
+import com.netgsm.asterisk.dto.request.CreateEndpointRequest;
+import com.netgsm.asterisk.dto.response.EndpointResponse;
+import com.netgsm.asterisk.dto.request.UpdateEndpointRequest;
 import com.netgsm.asterisk.entity.Endpoint;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.IvrOptionRequest;
-import com.netgsm.asterisk.dto.IvrOptionResponse;
+import com.netgsm.asterisk.dto.request.IvrOptionRequest;
+import com.netgsm.asterisk.dto.response.IvrOptionResponse;
 import com.netgsm.asterisk.entity.Ivr;
 import com.netgsm.asterisk.entity.IvrOption;
 import com.netgsm.asterisk.exception.BusinessRuleException;

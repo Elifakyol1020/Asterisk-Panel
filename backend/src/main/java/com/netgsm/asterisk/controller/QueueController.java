@@ -1,9 +1,9 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.CreateQueueRequest;
-import com.netgsm.asterisk.dto.QueueMemberRequest;
-import com.netgsm.asterisk.dto.QueueMemberResponse;
-import com.netgsm.asterisk.dto.QueueResponse;
-import com.netgsm.asterisk.dto.UpdateQueueRequest;
+import com.netgsm.asterisk.dto.request.CreateQueueRequest;
+import com.netgsm.asterisk.dto.request.QueueMemberRequest;
+import com.netgsm.asterisk.dto.response.QueueMemberResponse;
+import com.netgsm.asterisk.dto.response.QueueResponse;
+import com.netgsm.asterisk.dto.request.UpdateQueueRequest;
 import com.netgsm.asterisk.service.QueueService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

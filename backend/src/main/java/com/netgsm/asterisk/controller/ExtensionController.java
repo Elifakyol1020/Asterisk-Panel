@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.CreateExtensionRequest;
-import com.netgsm.asterisk.dto.ExtensionResponse;
-import com.netgsm.asterisk.dto.UpdateExtensionRequest;
+import com.netgsm.asterisk.dto.request.CreateExtensionRequest;
+import com.netgsm.asterisk.dto.response.ExtensionResponse;
+import com.netgsm.asterisk.dto.request.UpdateExtensionRequest;
 import com.netgsm.asterisk.service.ExtensionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateDialplanRequest;
-import com.netgsm.asterisk.dto.DialplanResponse;
-import com.netgsm.asterisk.dto.UpdateDialplanRequest;
+import com.netgsm.asterisk.dto.request.CreateDialplanRequest;
+import com.netgsm.asterisk.dto.response.DialplanResponse;
+import com.netgsm.asterisk.dto.request.UpdateDialplanRequest;
 import com.netgsm.asterisk.entity.Dialplan;
 import org.springframework.stereotype.Component;
 

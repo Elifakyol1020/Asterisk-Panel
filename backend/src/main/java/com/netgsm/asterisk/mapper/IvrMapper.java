@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateIvrRequest;
-import com.netgsm.asterisk.dto.IvrResponse;
-import com.netgsm.asterisk.dto.UpdateIvrRequest;
+import com.netgsm.asterisk.dto.request.CreateIvrRequest;
+import com.netgsm.asterisk.dto.response.IvrResponse;
+import com.netgsm.asterisk.dto.request.UpdateIvrRequest;
 import com.netgsm.asterisk.entity.Ivr;
 import org.springframework.stereotype.Component;
 

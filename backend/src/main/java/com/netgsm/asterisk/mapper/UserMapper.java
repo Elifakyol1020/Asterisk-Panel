@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateUserRequest;
-import com.netgsm.asterisk.dto.UpdateUserRequest;
-import com.netgsm.asterisk.dto.UserResponse;
+import com.netgsm.asterisk.dto.request.CreateUserRequest;
+import com.netgsm.asterisk.dto.request.UpdateUserRequest;
+import com.netgsm.asterisk.dto.response.UserResponse;
 import com.netgsm.asterisk.entity.User;
 import org.springframework.stereotype.Component;
 

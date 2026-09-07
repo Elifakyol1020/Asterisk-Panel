@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.CreateDialplanRequest;
-import com.netgsm.asterisk.dto.DialplanResponse;
-import com.netgsm.asterisk.dto.UpdateDialplanRequest;
+import com.netgsm.asterisk.dto.request.CreateDialplanRequest;
+import com.netgsm.asterisk.dto.response.DialplanResponse;
+import com.netgsm.asterisk.dto.request.UpdateDialplanRequest;
 import com.netgsm.asterisk.service.DialplanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class DialplanController {
     public DialplanResponse create(@Valid @RequestBody CreateDialplanRequest request) { return service.create(request); }
     @PostMapping("/flow") @ResponseStatus(HttpStatus.CREATED)
     public java.util.List<DialplanResponse> createFlow(
-            @Valid @RequestBody com.netgsm.asterisk.dto.CreateDialplanFlowRequest request) {
+            @Valid @RequestBody com.netgsm.asterisk.dto.request.CreateDialplanFlowRequest request) {
         return service.createFlow(request);
     }
     @PutMapping("/{id}")

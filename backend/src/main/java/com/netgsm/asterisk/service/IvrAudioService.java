@@ -1,6 +1,6 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.IvrAudioResponse;
+import com.netgsm.asterisk.dto.response.IvrAudioResponse;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import java.io.IOException;
 import java.nio.file.Files;

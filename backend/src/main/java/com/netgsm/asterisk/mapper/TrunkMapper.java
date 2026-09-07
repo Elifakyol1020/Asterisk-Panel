@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateTrunkRequest;
-import com.netgsm.asterisk.dto.TrunkResponse;
-import com.netgsm.asterisk.dto.UpdateTrunkRequest;
+import com.netgsm.asterisk.dto.request.CreateTrunkRequest;
+import com.netgsm.asterisk.dto.response.TrunkResponse;
+import com.netgsm.asterisk.dto.request.UpdateTrunkRequest;
 import com.netgsm.asterisk.entity.Trunk;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateQueueRequest;
-import com.netgsm.asterisk.dto.QueueResponse;
-import com.netgsm.asterisk.dto.UpdateQueueRequest;
+import com.netgsm.asterisk.dto.request.CreateQueueRequest;
+import com.netgsm.asterisk.dto.response.QueueResponse;
+import com.netgsm.asterisk.dto.request.UpdateQueueRequest;
 import com.netgsm.asterisk.entity.Queue;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;

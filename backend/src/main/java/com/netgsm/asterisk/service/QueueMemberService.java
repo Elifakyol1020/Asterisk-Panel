@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.QueueMemberRequest;
-import com.netgsm.asterisk.dto.QueueMemberResponse;
+import com.netgsm.asterisk.dto.request.QueueMemberRequest;
+import com.netgsm.asterisk.dto.response.QueueMemberResponse;
 import com.netgsm.asterisk.entity.Queue;
 import com.netgsm.asterisk.entity.QueueMember;
 import com.netgsm.asterisk.entity.Endpoint;

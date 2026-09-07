@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateEndpointRequest;
-import com.netgsm.asterisk.dto.EndpointResponse;
-import com.netgsm.asterisk.dto.UpdateEndpointRequest;
+import com.netgsm.asterisk.dto.request.CreateEndpointRequest;
+import com.netgsm.asterisk.dto.response.EndpointResponse;
+import com.netgsm.asterisk.dto.request.UpdateEndpointRequest;
 import com.netgsm.asterisk.entity.Endpoint;
 import org.springframework.stereotype.Component;
 

@@ -1,9 +1,9 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.CreateIvrRequest;
-import com.netgsm.asterisk.dto.IvrOptionRequest;
-import com.netgsm.asterisk.dto.IvrOptionResponse;
-import com.netgsm.asterisk.dto.IvrResponse;
-import com.netgsm.asterisk.dto.UpdateIvrRequest;
+import com.netgsm.asterisk.dto.request.CreateIvrRequest;
+import com.netgsm.asterisk.dto.request.IvrOptionRequest;
+import com.netgsm.asterisk.dto.response.IvrOptionResponse;
+import com.netgsm.asterisk.dto.response.IvrResponse;
+import com.netgsm.asterisk.dto.request.UpdateIvrRequest;
 import com.netgsm.asterisk.service.IvrOptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

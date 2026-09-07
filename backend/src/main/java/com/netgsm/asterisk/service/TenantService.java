@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.TenantRequest;
-import com.netgsm.asterisk.dto.TenantResponse;
+import com.netgsm.asterisk.dto.request.TenantRequest;
+import com.netgsm.asterisk.dto.response.TenantResponse;
 import com.netgsm.asterisk.entity.Tenant;
 import com.netgsm.asterisk.enums.TenantStatus;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

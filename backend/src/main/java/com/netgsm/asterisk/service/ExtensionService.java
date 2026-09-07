@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateExtensionRequest;
-import com.netgsm.asterisk.dto.ExtensionResponse;
-import com.netgsm.asterisk.dto.UpdateExtensionRequest;
+import com.netgsm.asterisk.dto.request.CreateExtensionRequest;
+import com.netgsm.asterisk.dto.response.ExtensionResponse;
+import com.netgsm.asterisk.dto.request.UpdateExtensionRequest;
 import com.netgsm.asterisk.entity.Extension;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;

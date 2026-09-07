@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.LoginRequest;
-import com.netgsm.asterisk.dto.LoginResponse;
+import com.netgsm.asterisk.dto.request.LoginRequest;
+import com.netgsm.asterisk.dto.response.LoginResponse;
 import com.netgsm.asterisk.service.JwtService;
 import com.netgsm.asterisk.exception.InvalidCredentialsException;
 import com.netgsm.asterisk.security.CurrentUser;

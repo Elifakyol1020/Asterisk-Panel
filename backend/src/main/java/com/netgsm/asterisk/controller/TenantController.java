@@ -1,6 +1,6 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.TenantRequest;
-import com.netgsm.asterisk.dto.TenantResponse;
+import com.netgsm.asterisk.dto.request.TenantRequest;
+import com.netgsm.asterisk.dto.response.TenantResponse;
 import com.netgsm.asterisk.service.TenantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

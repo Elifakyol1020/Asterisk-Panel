@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateIvrRequest;
-import com.netgsm.asterisk.dto.IvrResponse;
-import com.netgsm.asterisk.dto.UpdateIvrRequest;
+import com.netgsm.asterisk.dto.request.CreateIvrRequest;
+import com.netgsm.asterisk.dto.response.IvrResponse;
+import com.netgsm.asterisk.dto.request.UpdateIvrRequest;
 import com.netgsm.asterisk.entity.Ivr;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;

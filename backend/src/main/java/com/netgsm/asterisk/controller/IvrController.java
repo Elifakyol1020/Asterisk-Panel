@@ -1,9 +1,9 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.CreateIvrRequest;
-import com.netgsm.asterisk.dto.IvrOptionRequest;
-import com.netgsm.asterisk.dto.IvrOptionResponse;
-import com.netgsm.asterisk.dto.IvrResponse;
-import com.netgsm.asterisk.dto.UpdateIvrRequest;
+import com.netgsm.asterisk.dto.request.CreateIvrRequest;
+import com.netgsm.asterisk.dto.request.IvrOptionRequest;
+import com.netgsm.asterisk.dto.response.IvrOptionResponse;
+import com.netgsm.asterisk.dto.response.IvrResponse;
+import com.netgsm.asterisk.dto.request.UpdateIvrRequest;
 import com.netgsm.asterisk.service.IvrService;
 import com.netgsm.asterisk.service.IvrAudioService;
 import jakarta.validation.Valid;
@@ -27,7 +27,7 @@ public class IvrController {
     public void delete(@PathVariable Long id) { service.delete(id); }
     @PostMapping(value = "/audio", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public com.netgsm.asterisk.dto.IvrAudioResponse uploadAudio(
+    public com.netgsm.asterisk.dto.response.IvrAudioResponse uploadAudio(
             @RequestParam(required = false) Long tenantId,
             @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
         return audioService.upload(tenantId, file);

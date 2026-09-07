@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.CreateQueueRequest;
-import com.netgsm.asterisk.dto.QueueResponse;
-import com.netgsm.asterisk.dto.UpdateQueueRequest;
+import com.netgsm.asterisk.dto.request.CreateQueueRequest;
+import com.netgsm.asterisk.dto.response.QueueResponse;
+import com.netgsm.asterisk.dto.request.UpdateQueueRequest;
 import com.netgsm.asterisk.entity.Queue;
 import org.springframework.stereotype.Component;
 

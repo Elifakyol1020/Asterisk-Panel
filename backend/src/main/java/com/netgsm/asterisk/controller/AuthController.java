@@ -1,6 +1,6 @@
 package com.netgsm.asterisk.controller;
-import com.netgsm.asterisk.dto.LoginRequest;
-import com.netgsm.asterisk.dto.LoginResponse;
+import com.netgsm.asterisk.dto.request.LoginRequest;
+import com.netgsm.asterisk.dto.response.LoginResponse;
 import com.netgsm.asterisk.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

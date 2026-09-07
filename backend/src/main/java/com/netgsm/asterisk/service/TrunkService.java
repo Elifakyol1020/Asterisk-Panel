@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateTrunkRequest;
-import com.netgsm.asterisk.dto.TrunkResponse;
-import com.netgsm.asterisk.dto.UpdateTrunkRequest;
+import com.netgsm.asterisk.dto.request.CreateTrunkRequest;
+import com.netgsm.asterisk.dto.response.TrunkResponse;
+import com.netgsm.asterisk.dto.request.UpdateTrunkRequest;
 import com.netgsm.asterisk.entity.Trunk;
 import com.netgsm.asterisk.exception.BusinessRuleException;
 import com.netgsm.asterisk.exception.DuplicateResourceException;

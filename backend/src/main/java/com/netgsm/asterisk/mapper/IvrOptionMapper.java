@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.IvrOptionRequest;
-import com.netgsm.asterisk.dto.IvrOptionResponse;
+import com.netgsm.asterisk.dto.request.IvrOptionRequest;
+import com.netgsm.asterisk.dto.response.IvrOptionResponse;
 import com.netgsm.asterisk.entity.IvrOption;
 import org.springframework.stereotype.Component;
 

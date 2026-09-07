@@ -1,7 +1,7 @@
 package com.netgsm.asterisk.mapper;
 
-import com.netgsm.asterisk.dto.TenantRequest;
-import com.netgsm.asterisk.dto.TenantResponse;
+import com.netgsm.asterisk.dto.request.TenantRequest;
+import com.netgsm.asterisk.dto.response.TenantResponse;
 import com.netgsm.asterisk.entity.Tenant;
 import org.springframework.stereotype.Component;
 

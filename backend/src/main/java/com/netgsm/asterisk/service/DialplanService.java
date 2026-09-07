@@ -1,8 +1,8 @@
 package com.netgsm.asterisk.service;
 
-import com.netgsm.asterisk.dto.CreateDialplanRequest;
-import com.netgsm.asterisk.dto.DialplanResponse;
-import com.netgsm.asterisk.dto.UpdateDialplanRequest;
+import com.netgsm.asterisk.dto.request.CreateDialplanRequest;
+import com.netgsm.asterisk.dto.response.DialplanResponse;
+import com.netgsm.asterisk.dto.request.UpdateDialplanRequest;
 import com.netgsm.asterisk.entity.Dialplan;
 import com.netgsm.asterisk.entity.Extension;
 import com.netgsm.asterisk.exception.DuplicateResourceException;
@@ -56,7 +56,7 @@ public class DialplanService {
         return mapper.toResponse(entity);
     }
 
-    public java.util.List<DialplanResponse> createFlow(com.netgsm.asterisk.dto.CreateDialplanFlowRequest request) {
+    public java.util.List<DialplanResponse> createFlow(com.netgsm.asterisk.dto.request.CreateDialplanFlowRequest request) {
         Long tenantId = current.tenantForCreate(request.tenantId());
         if (extensions.existsByTenantIdAndExtensionNumber(tenantId, request.extension())) {
             throw new DuplicateResourceException("Extension number");
