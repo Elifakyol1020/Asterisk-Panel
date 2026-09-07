@@ -130,17 +130,27 @@ class PlatformApiTests {
         mvc.perform(get("/api/admin/tenants").param("sort", "name,desc").header("Authorization", bearer(admin)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].name").value("second"));
     }
-    @Test void tenantCodeIsNormalizedFromFriendlyInput() throws Exception {
-        var body = json.writeValueAsString(Map.of("name", "Net GSM A.Ş.", "code", "Net GSM A.Ş.", "status", "ACTIVE"));
-        mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
+    @Test void tenantNumberValidationUniquenessAndImmutability() throws Exception {
+        var body = json.writeValueAsString(Map.of("name", "Example", "code", " 008503024105 ", "status", "ACTIVE"));
+        var result = mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
                 .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Net GSM A.Ş."))
-                .andExpect(jsonPath("$.code").value("net_gsm_a_s"));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.code").value("008503024105")).andReturn();
+        long id = json.readTree(result.getResponse().getContentAsString()).get("id").asLong();
         mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
-                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("name", "Invalid", "code", "!", "status", "ACTIVE"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("INVALID_TENANT_CODE"));
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isConflict());
+        for (String code : new String[]{"acme", "+90123", "12 34", "1".repeat(49)}) {
+            mvc.perform(post("/api/admin/tenants").header("Authorization", bearer(admin))
+                    .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("name", "Invalid", "code", code, "status", "ACTIVE"))))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("INVALID_TENANT_CODE"));
+        }
+        mvc.perform(put("/api/admin/tenants/" + id).header("Authorization", bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
+        mvc.perform(put("/api/admin/tenants/" + id).header("Authorization", bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("name", "Example", "code", "999", "status", "ACTIVE"))))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("TENANT_NUMBER_IMMUTABLE"));
+        mvc.perform(put("/api/admin/tenants/" + first.getId()).header("Authorization", bearer(admin))
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("name", "Legacy", "code", "123456", "status", "ACTIVE"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value("123456"));
     }
     @Test void methodSecurityRejectsUnassignedRolesForPbxServices() {
         var security = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();

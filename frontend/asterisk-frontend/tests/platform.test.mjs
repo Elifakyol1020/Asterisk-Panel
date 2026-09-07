@@ -24,7 +24,7 @@ function load(file, mocks = {}, globals = {}) {
 }
 const { readClaims } = load('src/utils/session.ts')
 const { resources, pbxKeys } = load('src/config/resources.ts')
-const { buildPayload, normalizeTenantCode, validatePayload } = load('src/utils/resourceForm.ts')
+const { buildPayload, validatePayload } = load('src/utils/resourceForm.ts')
 const token = data => `header.${Buffer.from(JSON.stringify(data)).toString('base64url')}.signature`
 const valid = { sub: '12', userId: 12, role: 'SUPER_ADMIN', exp: Math.floor(Date.now() / 1000) + 3600 }
 test('JWT: both backend roles map to the correct identity', () => {
@@ -44,10 +44,11 @@ test('Payload: backend fields only; no ID, context or response metadata', () => 
   const tenant = buildPayload(resources.endpoints.fields, form, false, 'endpoints', false, 99)
   assert.equal('tenantId' in tenant, false)
 })
-test('Tenant code accepts friendly input and normalizes before save', () => {
-  assert.equal(normalizeTenantCode('Net GSM A.Ş.'), 'net_gsm_a_s')
-  const data = buildPayload(resources.tenants.fields, { name: 'Net GSM A.Ş.', code: ' Net GSM A.Ş. ', status: 'ACTIVE' }, false, 'tenants', true)
-  assert.equal(data.code, 'net_gsm_a_s')
+test('Santral number preserves leading zeros and rejects non-digit input', () => {
+  const data = buildPayload(resources.tenants.fields, { name: 'Example', code: ' 008503024105 ', status: 'ACTIVE' }, false, 'tenants', true)
+  assert.equal(data.code, '008503024105')
+  assert.equal(validatePayload(data, 'tenants').code, undefined)
+  for (const code of ['', 'acme', '+90123', '12 34', '1'.repeat(49)]) assert.ok(validatePayload({ code }, 'tenants').code)
 })
 test('Update: empty password is omitted, not sent as an empty string', () => {
   assert.equal('password' in buildPayload(resources.users.fields, { password: '' }, true, 'users', true, 3), false)

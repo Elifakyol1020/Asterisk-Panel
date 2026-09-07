@@ -10,7 +10,7 @@ const model = defineModel<string>({ required: true })
   <select v-model="model" aria-label="Tenant" :required="required" :disabled="disabled">
     <option value="" :disabled="required">{{ placeholder }}</option>
     <option v-for="tenant in tenants" :key="String(tenant.id)" :value="String(tenant.id)">
-      {{ tenant.name }} · #{{ tenant.id }}{{ tenant.status === 'INACTIVE' ? ' (Pasif)' : '' }}
+      {{ tenant.code }} · {{ tenant.name }}{{ tenant.status === 'INACTIVE' ? ' (Pasif)' : '' }}
     </option>
   </select>
 </template>

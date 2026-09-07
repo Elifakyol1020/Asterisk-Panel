@@ -9,8 +9,6 @@ import com.netgsm.asterisk.exception.PlatformException;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.mapper.TenantMapper;
 import com.netgsm.asterisk.repository.TenantRepository;
-import java.text.Normalizer;
-import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -56,6 +54,9 @@ public class TenantService {
     public TenantResponse update(Long id, TenantRequest request) {
         Tenant tenant = find(id);
         String code = normalizeCode(request.code());
+        if (tenant.getCode().matches("[0-9]{1,48}") && !tenant.getCode().equals(code)) {
+            throw new PlatformException(400, "TENANT_NUMBER_IMMUTABLE", "Santral numarası değiştirilemez");
+        }
         if (repository.existsByCodeAndIdNot(code, id)) throw new DuplicateResourceException("Tenant code");
         mapper.update(request, tenant, code);
         repository.flush();
@@ -73,17 +74,9 @@ public class TenantService {
     }
 
     private String normalizeCode(String value) {
-        String ascii = value.trim().toLowerCase(Locale.ROOT)
-                .replace('ı', 'i').replace('ğ', 'g').replace('ü', 'u')
-                .replace('ş', 's').replace('ö', 'o').replace('ç', 'c');
-        String normalized = Normalizer.normalize(ascii, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("_+", "_")
-                .replaceAll("^_|_$", "");
-        if (normalized.length() > 48) normalized = normalized.substring(0, 48).replaceAll("_+$", "");
-        if (normalized.length() < 2) {
-            throw new PlatformException(400, "INVALID_TENANT_CODE", "Kısa kod en az iki harf veya rakam içermeli");
+        String normalized = value == null ? "" : value.trim();
+        if (!normalized.matches("[0-9]{1,48}")) {
+            throw new PlatformException(400, "INVALID_TENANT_CODE", "Santral numarası 1–48 rakamdan oluşmalıdır");
         }
         return normalized;
     }

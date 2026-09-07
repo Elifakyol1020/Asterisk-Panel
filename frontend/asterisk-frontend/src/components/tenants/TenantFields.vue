@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { watch } from 'vue'
 import type { RecordData } from '@/api/platform'
 import { tenantFields as fields } from '@/config/resources/tenants'
 import FormField from '@/components/forms/FormField.vue'
-import { normalizeTenantCode } from '@/utils/resourceForm'
 
 const props = defineProps<{
   form: RecordData
@@ -12,20 +10,8 @@ const props = defineProps<{
   editing?: boolean
 }>()
 
-let lastGenerated = ''
-
-watch(() => props.form.name, value => {
-  const generated = normalizeTenantCode(value)
-  if (!props.editing && generated && (!props.form.code || props.form.code === lastGenerated)) {
-    props.form.code = generated
-    lastGenerated = generated
-  }
-})
-
-watch(() => props.form.code, value => {
-  const normalized = normalizeTenantCode(value)
-  if (typeof value === 'string' && value !== normalized) props.form.code = normalized
-})
+// The edit view mounts after loading the persisted record.
+const numberLocked = Boolean(props.editing && /^[0-9]{1,48}$/.test(String(props.form.code ?? '')))
 </script>
 
 <template>
@@ -40,7 +26,7 @@ watch(() => props.form.code, value => {
     v-model="form.code"
     :field="fields.code!"
     :error="errors.code"
-    :disabled="disabled"
+    :disabled="disabled || numberLocked"
     :editing="editing"
   />
   <FormField
