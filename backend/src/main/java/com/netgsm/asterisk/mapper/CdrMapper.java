@@ -51,7 +51,7 @@ public class CdrMapper {
             d.getChannel(),
             d.getDstChannel(),
             d.getStartTime(),
-            d.getAnswerTime(),
+            d.getAnswerTime() != null && !d.getAnswerTime().isAfter(java.time.Instant.EPOCH) ? null : d.getAnswerTime(),
             d.getEndTime(),
             d.getDuration(),
             d.getBillsec(),

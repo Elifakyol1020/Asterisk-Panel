@@ -14,11 +14,16 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class CdrRepository {
     private final CdrJpaRepository records;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
+    @org.springframework.transaction.annotation.Transactional
     public CdrDocument save(CdrDocument document) {
         if (document.getTenantId() == null || document.getTenantId() <= 0)
             throw new IllegalArgumentException("Tenant required");
-        return records.saveAndFlush(document);
+        var saved = records.saveAndFlush(document);
+        entityManager.refresh(saved);
+        return saved;
     }
 
     public Optional<CdrDocument> find(String id, Long tenantId) {

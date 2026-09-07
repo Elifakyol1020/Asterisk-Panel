@@ -179,7 +179,7 @@ CREATE TABLE extensions (
 -- Apply before starting the updated backend on an existing database.
 CREATE TABLE IF NOT EXISTS platform.cdr (
     id VARCHAR(64) PRIMARY KEY,
-    tenant_id BIGINT NOT NULL REFERENCES platform.tenants(id),
+    tenant_id BIGINT REFERENCES platform.tenants(id),
     cdr_sequence INTEGER NOT NULL CHECK (cdr_sequence >= 0),
     unique_id VARCHAR(150) NOT NULL,
     linked_id VARCHAR(150),

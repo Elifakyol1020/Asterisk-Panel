@@ -34,7 +34,7 @@ class CdrPersistenceIntegrationTests {
     @Test void unassignedDirectRecordsAreVisibleOnlyToSuperAdmin() {
         var record = new com.netgsm.asterisk.mapper.CdrMapper().toDocument(
                 input(1L, "unassigned", "1003", "1002", "ANSWERED", "2026-09-07T07:00:00Z"), 1L);
-        record.setTenantId(null);
+        record.setTenantId(null); record.setContext("from-trunk");
         records.saveAndFlush(record);
         try {
             var request = new CdrSearchRequest(); request.setUniqueId("unassigned");
@@ -44,6 +44,24 @@ class CdrPersistenceIntegrationTests {
                     .isInstanceOf(com.netgsm.asterisk.exception.ResourceNotFoundException.class);
             login(Role.SUPER_ADMIN, null);
             assertThat(service.list(request).getTotalElements()).isEqualTo(1);
+            assertThat(service.get(record.getId()).tenantId()).isNull();
+        } finally { records.deleteById(record.getId()); }
+    }
+    @Test void conflictingChannelsCannotExposeCallsToEitherTenant() {
+        var one = tenant("scope-one"); var two = tenant("scope-two");
+        var record = new com.netgsm.asterisk.mapper.CdrMapper().toDocument(
+                input(one.getId(), "conflicting", "1003", "1002", "ANSWERED", "2026-09-07T07:00:00Z"), one.getId());
+        record.setChannel("PJSIP/tenant" + two.getId() + "_1003-0001");
+        records.saveAndFlush(record);
+        try {
+            var request = new CdrSearchRequest(); request.setUniqueId("conflicting");
+            for (Long tenant : List.of(one.getId(), two.getId())) {
+                login(Role.TENANT_ADMIN, tenant);
+                assertThat(service.list(request).getTotalElements()).isZero();
+                assertThatThrownBy(() -> service.get(record.getId()))
+                        .isInstanceOf(com.netgsm.asterisk.exception.ResourceNotFoundException.class);
+            }
+            login(Role.SUPER_ADMIN, null);
             assertThat(service.get(record.getId()).tenantId()).isNull();
         } finally { records.deleteById(record.getId()); }
     }

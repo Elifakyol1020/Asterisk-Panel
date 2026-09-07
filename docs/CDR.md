@@ -6,17 +6,13 @@ CDR için `docker-compose.asterisk.yml` gerekmez; bu dosya yalnızca IVR ses pay
 
 ## 1. Veritabanı geçişi
 
-Mevcut veritabanında pgAdmin Query Tool ile sırayla çalıştırın:
-
-1. `backend/src/main/resources/manual-migrations/002_cdr_postgresql.sql`
-2. `backend/src/main/resources/manual-migrations/003_cdr_direct_odbc.sql`
-
-002 zaten uygulandıysa tekrar çalıştırılabilir. 003, kimlik üretimini ve kurum çözümleyen
-trigger'ı ekler; mevcut kayıtlar silinmez. Kurumu çözülemeyen yeni kayıtlar NULL tenant_id
-ile saklanır, yalnızca SUPER_ADMIN görür. Tenant kullanıcıları bu kayıtları göremez.
-Önceden oluşmuş `cdr_tail_state` tablosu artık kullanılmaz; silinmesi gerekmez.
-Yeni ve boş PostgreSQL volume'larında Compose her iki aşamayı otomatik uygular.
-Mevcut volume'larda init script'ler tekrar çalışmaz; migration'ları elle uygulayın.
+Mevcut veritabanında pgAdmin Query Tool ile **`docs/asterisk/install-cdr.sql`** dosyasını çalıştırın.
+Bu tek dosya tabloyu ve indeksleri oluşturur, kimlik için UUID varsayılanı ekler ve önceki
+trigger varsa kaldırır. PostgreSQL 15+ gerekir. Mevcut `platform.tenants` tablosu korunur.
+`tenant_id` sütunu eski kurulumlarla uyumluluk için kalır; backend bu sütuna güvenmez ve
+kurumu context/kanaldan sorgu sırasında hesaplar. Trigger veya özel SQL fonksiyonu kullanılmaz.
+Yeni volume için Compose schema.sql ve 003 scriptini otomatik uygular; mevcut volume
+üzerinde SQL dosyasını elle çalıştırın. Önceki kayıtlar silinmez.
 
 ```bash
 docker compose up -d --build
@@ -75,15 +71,13 @@ Asterisk loglarından takip edin. PostgreSQL'e geçiş tek başına kayıpsız t
 
 ## 3. Kayıt eşlemesi ve kurum güvenliği
 
-Alias dosyası `uniqueid`, `linkedid`, `sequence`, `dcontext`, `dstchannel`, `start`,
-`answer`, `end` alanlarını mevcut backend sütunlarına eşler. `sequence` Asterisk'ten gelir;
-backend belleğinde sayaç tutulmaz. `id` PostgreSQL tarafından üretilir.
-
-Trigger context ve iki kanaldaki kurum isimlerini kontrol eder:
-`tenant_1_internal`, `PJSIP/tenant1_1003-0001` gibi. Tek bir mevcut kurum bulunduğunda
-`tenant_id` atanır. Çelişki, bulunamayan kurum veya eşleşmeyen isimde NULL kalır;
-gönderilen tenant_id değerine güvenilmez. SUPER_ADMIN panelde “Kurum belirlenemedi” görür.
-Numaradan kurum tahmini yapılmaz. Bu trigger INSERT ve UPDATE işlemlerinde çalışır.
+Alias dosyası Asterisk alanlarını backend sütunlarına eşler. `sequence` doğrudan
+Asteriskten, `id` PostgreSQL varsayılanından gelir. Backend sorgusu context ve iki kanalı
+inceler: `tenant_1_internal`, `PJSIP/tenant1_1003-0001` gibi. Tek bir mevcut kurumla
+uyum varsa kurum hesaplanır; belirsiz veya çelişkili kayıtları yalnızca SUPER_ADMIN görür.
+Bu filtre sayfalama ve toplam kayıt sayısı hesaplanmadan önce veritabanı sorgusunda
+uygulanır. Saklanmış tenant_id değeri yetki kazandırmaz. Epoch yanıt zamanı backendde
+boş yanıt zamanına dönüştürülür.
 
 Standart CDR çağrının ses dosyasını içermez. Ses yolu istenirse dialplan tarafından
 özel `CDR(recording_path)` alanı doldurulmalıdır; isim alanları da gönderilmezse boş kalır.
@@ -100,8 +94,9 @@ FROM platform.cdr ORDER BY start_time DESC LIMIT 20;
 ```
 
 Panelde `/super-admin/cdr` veya `/tenant/cdr` sayfasını yenileyin.
-Kayıt yoksa Asterisk ODBC/CDR loglarını kontrol edin. tenant_id NULL ise context/kanal
-isimlerini ve platform.tenants tablosunu kontrol edin. Backend artık CSV dosyası aramaz.
+Kayıt yoksa Asterisk ODBC/CDR loglarını kontrol edin. Panelde kurum belirlenemiyorsa
+context/kanal isimlerini ve platform.tenants tablosunu kontrol edin. Tablodaki tenant_id
+alanı kurum hesaplamasında kullanılmaz. Backend artık CSV dosyası aramaz.
 
 API aynı kaldı: `GET /api/cdr`, `GET /api/cdr/{id}`. SUPER_ADMIN için isteğe bağlı
 `POST /api/admin/cdr` manuel aktarımı korunur; doğrudan ODBC akışında bu API çağrılmaz.
@@ -113,7 +108,7 @@ Eski Elasticsearch kayıtları otomatik taşınmaz; eski volume'u silmeyin.
 `backend/mvnw.cmd -f backend/pom.xml clean test`
 
 Varsayılan persistence testleri H2 ile backend sorgularını ve atanmamış kayıtların
-kurum kullanıcılarından gizlenmesini doğrular. Gerçek PostgreSQL trigger testi için
+kurum kullanıcılarından gizlenmesini doğrular. Gerçek PostgreSQL tablo/default testi için
 `CDR_PG_TEST_URL` (jdbc:postgresql://...), `CDR_PG_TEST_USER`, `CDR_PG_TEST_PASSWORD`
 ortam değişkenlerini tanımlayıp `-Dtest=CdrDirectPostgresTests test` çalıştırın.
 Test rastgele bir şema oluşturur, migration ve doğrudan INSERT senaryolarını çalıştırır,

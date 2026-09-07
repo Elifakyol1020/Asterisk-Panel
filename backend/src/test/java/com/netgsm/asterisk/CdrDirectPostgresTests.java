@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import static org.assertj.core.api.Assertions.*;
 
-/** Real PostgreSQL trigger test. All objects live in a random schema and are rolled back. */
+/** Real PostgreSQL table/default test. All objects live in a random schema and are rolled back. */
 @EnabledIfEnvironmentVariable(named = "CDR_PG_TEST_URL", matches = ".+")
 class CdrDirectPostgresTests {
-    @Test void directOdbcInsertGeneratesIdResolvesTenantAndPreservesUnknownCalls() throws Exception {
+    @Test void directOdbcInsertGeneratesIdWithoutTrigger() throws Exception {
         try (var db = DriverManager.getConnection(System.getenv("CDR_PG_TEST_URL"),
                 System.getenv("CDR_PG_TEST_USER"), System.getenv("CDR_PG_TEST_PASSWORD"))) {
             db.setAutoCommit(false);
@@ -29,7 +29,7 @@ class CdrDirectPostgresTests {
                 String insert = "INSERT INTO " + schema + ".cdr "
                         + "(tenant_id, unique_id, cdr_sequence, src, dst, context, channel, dst_channel, "
                         + "start_time, answer_time, end_time, duration, billsec, disposition) "
-                        + "VALUES (2, ?, ?, ' 1003 ', '1002', ?, ?, ?, "
+                        + "VALUES (NULL, ?, ?, ' 1003 ', '1002', ?, ?, ?, "
                         + "'2026-09-07 07:00:00', '1970-01-01 00:00:00', '2026-09-07 07:01:00', 60, 0, 'NO ANSWER') "
                         + "RETURNING id, tenant_id, src, answer_time, start_time";
                 try (var write = db.prepareStatement(insert)) {
@@ -52,9 +52,9 @@ class CdrDirectPostgresTests {
         try (var row = write.executeQuery()) {
             assertThat(row.next()).isTrue();
             assertThat(row.getString("id")).isNotBlank();
-            assertThat(row.getObject("tenant_id", Long.class)).isEqualTo(tenant);
-            assertThat(row.getString("src")).isEqualTo("1003");
-            assertThat(row.getTimestamp("answer_time")).isNull();
+            assertThat(row.getObject("tenant_id", Long.class)).isNull();
+            assertThat(row.getString("src")).isEqualTo(" 1003 ");
+            assertThat(row.getTimestamp("answer_time").toInstant()).isEqualTo(java.time.Instant.EPOCH);
             assertThat(row.getTimestamp("start_time").toInstant()).isEqualTo("2026-09-07T07:00:00Z");
         }
     }
