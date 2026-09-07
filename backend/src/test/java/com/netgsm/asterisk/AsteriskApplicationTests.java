@@ -9,7 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // H2 is test-only; the production PostgreSQL configuration remains validate-only.
 @SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchClientAutoConfiguration,org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchRestClientAutoConfiguration",
         "spring.config.import=",
         "spring.datasource.url=jdbc:h2:mem:platform;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS platform",
         "spring.datasource.driver-class-name=org.h2.Driver",
@@ -21,8 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         "app.cors.allowed-origins=https://test.invalid"
 })
 class AsteriskApplicationTests {
-    @org.springframework.test.context.bean.override.mockito.MockitoBean
-    org.springframework.data.elasticsearch.core.ElasticsearchOperations elasticsearch;
 
     @Autowired
     private JwtProperties jwtProperties;

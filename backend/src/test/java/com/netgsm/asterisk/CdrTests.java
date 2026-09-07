@@ -1,6 +1,5 @@
 package com.netgsm.asterisk;
 
-import com.netgsm.asterisk.config.CdrIndex;
 import com.netgsm.asterisk.dto.request.*;
 import com.netgsm.asterisk.entity.CdrDocument;
 import com.netgsm.asterisk.mapper.CdrMapper;
@@ -17,11 +16,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CdrTests {
-    final CdrElasticsearchRepository repository = mock(CdrElasticsearchRepository.class);
+    final CdrRepository repository = mock(CdrRepository.class);
     final CurrentUserService current = mock(CurrentUserService.class);
     final CdrMapper mapper = new CdrMapper();
     final CdrService service = new CdrService(current, repository, mapper);
-    final CdrElasticsearchRepository queryRepository = new CdrElasticsearchRepository(null, new CdrIndex("test-cdr"));
 
     @Test void tenantOneCanReadOwnRecordsAndCannotOverrideTenant() {
         when(current.getCurrentTenantId()).thenReturn(1L);
@@ -50,40 +48,6 @@ class CdrTests {
     @Test void unscopedUserFailsClosed() {
         assertThatThrownBy(() -> service.list(new CdrSearchRequest())).isInstanceOf(TenantAccessDeniedException.class);
         verifyNoInteractions(repository);
-    }
-    @Test void srcExactAndPrefixUseTermAndPrefixWithoutWildcard() {
-        var r = new CdrSearchRequest(); r.setSrc("100");
-        var filters = queryRepository.query(1L, r).getQuery().bool().filter();
-        assertThat(filters).anyMatch(q -> q.isTerm() && q.term().field().equals("src") && q.term().value().stringValue().equals("100"));
-        r.setPrefix(true);
-        assertThat(queryRepository.query(1L, r).getQuery().bool().filter()).anyMatch(q -> q.isPrefix() && q.prefix().field().equals("src"));
-        assertThat(queryRepository.query(1L, r).getQuery().toString()).doesNotContain("wildcard");
-    }
-    @Test void dstFilterIsExact() {
-        var r = new CdrSearchRequest(); r.setDst("1002");
-        assertThat(queryRepository.query(1L, r).getQuery().bool().filter()).anyMatch(q -> q.isTerm() && q.term().field().equals("dst") && q.term().value().stringValue().equals("1002"));
-    }
-    @Test void dispositionFilterIsExact() {
-        var r = new CdrSearchRequest(); r.setDisposition("ANSWERED");
-        assertThat(queryRepository.query(1L, r).getQuery().bool().filter()).anyMatch(q -> q.isTerm() && q.term().field().equals("disposition") && q.term().value().stringValue().equals("ANSWERED"));
-    }
-    @Test void dateRangeIncludesStartExcludesEnd() {
-        var r = new CdrSearchRequest(); r.setStartDate(Instant.parse("2026-09-07T00:00:00Z")); r.setEndDate(Instant.parse("2026-09-08T00:00:00Z"));
-        var range = queryRepository.query(1L, r).getQuery().bool().filter().stream().filter(q -> q.isRange()).findFirst().orElseThrow().range().date();
-        assertThat(range.gte()).isEqualTo(r.getStartDate().toString()); assertThat(range.lt()).isEqualTo(r.getEndDate().toString());
-    }
-    @Test void paginationAndStableSortingAreApplied() {
-        var r = new CdrSearchRequest(); r.setPage(2); r.setSize(20);
-        var q = queryRepository.query(1L, r);
-        assertThat(q.getPageable().getOffset()).isEqualTo(40);
-        assertThat(q.getPageable().getPageSize()).isEqualTo(20);
-        assertThat(q.getSort().getOrderFor("startTime").getDirection()).isEqualTo(Sort.Direction.DESC);
-        assertThat(q.getSort().getOrderFor("sortId")).isNotNull();
-        r.setPage(500); assertThatThrownBy(r::validateRange).isInstanceOf(IllegalArgumentException.class);
-    }
-    @Test void everyTenantQueryHasMandatoryTenantFilter() {
-        assertThat(queryRepository.query(1L, new CdrSearchRequest()).getQuery().bool().filter())
-            .anyMatch(q -> q.isTerm() && q.term().field().equals("tenantId") && q.term().value().longValue() == 1L);
     }
     @Test void unresolvedCdrIsNeverSavedAndPublishesRejection() {
         var tenants = mock(TenantRepository.class);
@@ -114,4 +78,3 @@ class CdrTests {
             Instant.parse("2026-09-07T07:22:14Z"), Instant.parse("2026-09-07T07:22:18Z"), Instant.parse("2026-09-07T07:23:32Z"), 78, 74, "ANSWERED", null);
     }
 }
-

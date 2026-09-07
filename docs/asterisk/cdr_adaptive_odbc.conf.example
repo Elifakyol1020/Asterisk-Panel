@@ -1,0 +1,18 @@
+; Merge into /etc/asterisk/cdr_adaptive_odbc.conf.
+; Keep exactly ONE writer section for platform.cdr to avoid duplicate inserts.
+[platform_cdr]
+connection=asterisk-cdr
+schema=platform
+table=cdr
+usegmtime=yes
+alias uniqueid => unique_id
+alias linkedid => linked_id
+alias sequence => cdr_sequence
+alias dcontext => context
+alias dstchannel => dst_channel
+alias start => start_time
+alias answer => answer_time
+alias end => end_time
+; src, dst, channel, duration, billsec and disposition already match.
+; id and tenant_id are generated/resolved by PostgreSQL; do not set them in dialplan.
+; Optional custom CDR(recording_path) may contain the recording filename.

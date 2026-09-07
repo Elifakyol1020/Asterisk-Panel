@@ -1,0 +1,7 @@
+; Merge into /etc/asterisk/res_odbc.conf, keeping existing Realtime connections.
+[asterisk-cdr]
+enabled => yes
+dsn => asterisk-cdr
+username => asterisk_user
+password => REPLACE_WITH_DB_PASSWORD
+pre-connect => yes

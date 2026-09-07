@@ -37,7 +37,6 @@ public class CdrMapper {
             String identity = tenantId + ":" + document.getUniqueId() + ":" + input.sequence();
             document.setId(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(identity.getBytes(StandardCharsets.UTF_8))));
         } catch (java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
-        document.setSortId(document.getId());
         return document;
     }
     public CdrResponse toResponse(CdrDocument d) {

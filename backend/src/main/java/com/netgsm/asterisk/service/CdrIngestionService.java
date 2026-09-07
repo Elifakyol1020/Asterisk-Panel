@@ -2,7 +2,7 @@ package com.netgsm.asterisk.service;
 import com.netgsm.asterisk.dto.request.CdrInput;
 import com.netgsm.asterisk.dto.response.CdrResponse;
 import com.netgsm.asterisk.mapper.CdrMapper;
-import com.netgsm.asterisk.repository.CdrElasticsearchRepository;
+import com.netgsm.asterisk.repository.CdrRepository;
 import com.netgsm.asterisk.exception.PlatformException;
 import jakarta.validation.Validator;
 import java.util.Set;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class CdrIngestionService {
     private final TenantResolver resolver;
     private final CdrMapper mapper;
-    private final CdrElasticsearchRepository repository;
+    private final CdrRepository repository;
     private final Validator validator;
     private final ApplicationEventPublisher events;
     public CdrResponse ingest(CdrInput input) {

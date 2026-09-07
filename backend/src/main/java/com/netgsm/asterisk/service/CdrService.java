@@ -4,7 +4,7 @@ import com.netgsm.asterisk.dto.response.CdrResponse;
 import com.netgsm.asterisk.exception.ResourceNotFoundException;
 import com.netgsm.asterisk.exception.TenantAccessDeniedException;
 import com.netgsm.asterisk.mapper.CdrMapper;
-import com.netgsm.asterisk.repository.CdrElasticsearchRepository;
+import com.netgsm.asterisk.repository.CdrRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
 public class CdrService {
     private final CurrentUserService current;
-    private final CdrElasticsearchRepository repository;
+    private final CdrRepository repository;
     private final CdrMapper mapper;
     public Page<CdrResponse> list(CdrSearchRequest request) {
         request.validateRange();

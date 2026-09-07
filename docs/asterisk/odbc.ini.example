@@ -1,0 +1,9 @@
+; Merge this DSN into /etc/odbc.ini on the Asterisk host.
+; Driver must match a name returned by: odbcinst -q -d
+[asterisk-cdr]
+Driver = PostgreSQL Unicode
+Servername = 127.0.0.1
+Port = 5433
+Database = asterisk
+; UTC must match usegmtime=yes in cdr_adaptive_odbc.conf.
+ConnSettings = SET TIME ZONE 'UTC'

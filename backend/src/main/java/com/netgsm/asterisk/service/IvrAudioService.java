@@ -9,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
 public class IvrAudioService {
     private final CurrentUserService current;
@@ -57,6 +59,8 @@ public class IvrAudioService {
                 Files.copy(input, destination, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException ex) {
+            log.warn("IVR audio could not be written to {} - is the host sounds directory bind-mounted"
+                    + " and writable by the container?", destination, ex);
             throw new BusinessRuleException("Audio file could not be stored");
         }
         return new IvrAudioResponse(asteriskName, original);

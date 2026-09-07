@@ -18,7 +18,7 @@ let listAbort: AbortController | undefined, detailAbort: AbortController | undef
 const statuses: Record<string, string> = { ANSWERED: 'Yanıtlandı', 'NO ANSWER': 'Yanıtsız', BUSY: 'Meşgul', FAILED: 'Başarısız', CONGESTION: 'Yoğunluk' }
 const date = (value: string | null) => value ? new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(value)) : '—'
 const duration = (value: number) => `${Math.floor(value / 3600).toString().padStart(2, '0')}:${Math.floor(value % 3600 / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`
-const tenantName = (id: number) => tenants.value.find(t => Number(t.id) === id)?.name || `Kurum #${id}`
+const tenantName = (id: number | null) => id === null ? 'Kurum belirlenemedi' : tenants.value.find(t => Number(t.id) === id)?.name || `Kurum #${id}`
 const nextLimit = computed(() => data.value && (data.value.number + 2) * data.value.size > 10000)
 async function load(page = 0) {
   listAbort?.abort(); const request = new AbortController(); listAbort = request

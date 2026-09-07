@@ -1,5 +1,5 @@
 export interface CdrRecord {
-  id: string; tenantId: number; sequence: number; uniqueId: string; linkedId: string | null
+  id: string; tenantId: number | null; sequence: number; uniqueId: string; linkedId: string | null
   src: string; dst: string; srcName: string | null; dstName: string | null
   context: string | null; channel: string | null; dstChannel: string | null
   startTime: string; answerTime: string | null; endTime: string

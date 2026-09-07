@@ -1,0 +1,6 @@
+; Merge these settings into the existing [general] section of /etc/asterisk/cdr.conf.
+[general]
+enable=yes
+unanswered=yes
+congestion=yes
+batch=no
