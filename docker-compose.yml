@@ -1,5 +1,21 @@
 name: asterisk
 services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.5
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=3s' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
   postgres:
     image: postgres:17-alpine
     environment:
@@ -43,6 +59,7 @@ services:
       DB_HOST: postgres
       DB_PORT: "5432"
       SERVER_PORT: "8080"
+      ELASTICSEARCH_URIS: http://elasticsearch:9200
       CORS_ALLOWED_ORIGINS: "http://localhost:${FRONTEND_PORT:-3000},${CORS_ALLOWED_ORIGINS:-http://localhost:5173}"
     ports:
       - "127.0.0.1:${SERVER_PORT:-8080}:8080"
@@ -76,6 +93,7 @@ configs:
     content: |
       {"Servers":{"1":{"Name":"Asterisk PostgreSQL","Group":"Servers","Host":"postgres","Port":5432,"MaintenanceDB":"${DB_NAME}","Username":"${DB_USERNAME}","SSLMode":"prefer"}}}
 volumes:
+  elasticsearch_data:
   pgadmin_data:
   postgres_data:
     name: asterisk-local_postgres_data

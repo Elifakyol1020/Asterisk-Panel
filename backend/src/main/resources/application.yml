@@ -1,4 +1,10 @@
 spring:
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    username: ${ELASTICSEARCH_USERNAME:}
+    password: ${ELASTICSEARCH_PASSWORD:}
+    connection-timeout: 3s
+    socket-timeout: 10s
   application:
     name: asterisk-platform
   config:
@@ -29,6 +35,8 @@ server:
   port: ${SERVER_PORT:8080}
 
 app:
+  cdr:
+    index: ${CDR_INDEX:asterisk-cdr}
   asterisk:
     sounds-path: ${ASTERISK_SOUNDS_PATH:/var/lib/asterisk/sounds}
   jwt:

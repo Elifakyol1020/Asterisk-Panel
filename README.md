@@ -1,5 +1,7 @@
 # Asterisk
 
+Elasticsearch tabanlı çağrı geçmişi için [CDR kurulumu, mimari, güvenlik ve curl örnekleri](docs/CDR.md).
+
 ## Proje dizini
 
 ```text

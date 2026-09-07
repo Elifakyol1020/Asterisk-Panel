@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 
 // The same PBX features are available in both role scopes; each route has its own page.
 export const pbxRoutes: RouteRecordRaw[] = [
+  { path: 'cdr', component: () => import('@/views/pbx/cdr/CdrListView.vue'), meta: { title: 'Çağrı kayıtları' } },
   {
     path: 'endpoints',
     component: () => import('@/views/pbx/endpoints/EndpointListView.vue'),

@@ -1,0 +1,19 @@
+{
+  "uniqueId": "1788756112.43",
+  "linkedId": "1788756112.43",
+  "sequence": 0,
+  "src": "1003",
+  "dst": "1002",
+  "srcName": "Elif",
+  "dstName": "Eren",
+  "context": "tenant_1_internal",
+  "channel": "PJSIP/tenant1_1003-00000034",
+  "dstChannel": "PJSIP/tenant1_1002-00000035",
+  "startTime": "2026-09-07T10:22:14+03:00",
+  "answerTime": "2026-09-07T10:22:18+03:00",
+  "endTime": "2026-09-07T10:23:32+03:00",
+  "duration": 78,
+  "billsec": 74,
+  "disposition": "ANSWERED",
+  "recordingPath": "/recordings/2026/09/07/1788756112.43.wav"
+}

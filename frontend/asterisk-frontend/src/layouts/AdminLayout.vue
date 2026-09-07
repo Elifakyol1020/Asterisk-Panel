@@ -8,6 +8,7 @@ const auth = useAuthStore(), route = useRoute(), router = useRouter(), mobileOpe
 const prefix = computed(() => auth.isSuperAdmin ? '/super-admin' : '/tenant')
 const items = computed(() => [
   { title: 'Genel bakış', path: `${prefix.value}/dashboard`, icon: 'grid' },
+  { title: 'Çağrı kayıtları', path: `${prefix.value}/cdr`, icon: 'phone' },
   ...(auth.isSuperAdmin ? ['tenants', 'users'] : []).concat(pbxKeys).map(key => ({ title: resources[key]!.title, path: `${prefix.value}/${key}`, icon: resources[key]!.icon })),
 ])
 watch(() => route.fullPath, () => { mobileOpen.value = false })

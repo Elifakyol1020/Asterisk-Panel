@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {
+        "spring.autoconfigure.exclude=org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchClientAutoConfiguration,org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchRestClientAutoConfiguration",
         "spring.config.import=",
         "spring.datasource.url=jdbc:h2:mem:api;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
@@ -42,6 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @AutoConfigureMockMvc
 class PlatformApiTests {
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    org.springframework.data.elasticsearch.core.ElasticsearchOperations elasticsearch;
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JwtService jwt;
@@ -413,6 +416,16 @@ class PlatformApiTests {
         assertThat(repository.existsById(id)).isFalse();
     }
     private String bearer(User user) { return "Bearer " + jwt.issue(user); }
+    @Test void cdrEndpointsUseExistingJwtAndRejectTenantIngestion() throws Exception {
+        mvc.perform(get("/api/cdr")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/admin/cdr").header("Authorization", bearer(firstAdmin))
+                .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/cdr").header("Authorization", bearer(firstAdmin)).param("size", "101"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/cdr").header("Authorization", bearer(firstAdmin)).param("page", "500"))
+                .andExpect(status().isBadRequest());
+    }
     private Tenant tenant(String code) {
         Tenant tenant = new Tenant(); tenant.setName(code); tenant.setCode(code); tenant.setStatus(TenantStatus.ACTIVE); return tenants.saveAndFlush(tenant);
     }
