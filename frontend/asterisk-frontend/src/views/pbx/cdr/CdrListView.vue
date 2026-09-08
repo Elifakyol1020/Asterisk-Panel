@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { cdrService } from '@/services/cdr.service'
 import { resourceService } from '@/services/resource.service'
 import { errorMessage, type Page, type RecordData } from '@/api/platform'
@@ -15,18 +15,48 @@ const data = ref<Page<CdrRecord> | null>(null), loading = ref(false), error = re
 const tenants = ref<RecordData[]>([]), detail = ref<CdrRecord | null>(null), detailError = ref(''), detailLoading = ref(false), dialog = ref<HTMLDialogElement>()
 let applied: Record<string, unknown> = { size: 20 }
 let listAbort: AbortController | undefined, detailAbort: AbortController | undefined
+const live = ref(true), newRecords = ref(false), refreshError = ref('')
+let pollAbort: AbortController | undefined
+let pollTimer: ReturnType<typeof setInterval> | undefined
+let currentPage = 0
 const statuses: Record<string, string> = { ANSWERED: 'Yanıtlandı', 'NO ANSWER': 'Yanıtsız', BUSY: 'Meşgul', FAILED: 'Başarısız', CONGESTION: 'Yoğunluk' }
 const date = (value: string | null) => value ? new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'medium' }).format(new Date(value)) : '—'
 const duration = (value: number) => `${Math.floor(value / 3600).toString().padStart(2, '0')}:${Math.floor(value % 3600 / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`
 const tenantName = (id: number | null) => id === null ? 'Kurum belirlenemedi' : tenants.value.find(t => Number(t.id) === id)?.name || `Kurum #${id}`
 const nextLimit = computed(() => data.value && (data.value.number + 2) * data.value.size > 10000)
 async function load(page = 0) {
+  pollAbort?.abort(); pollAbort = undefined
+  currentPage = page; newRecords.value = false; refreshError.value = ''
   listAbort?.abort(); const request = new AbortController(); listAbort = request
   loading.value = true; error.value = ''; data.value = null
   try { const response = await cdrService.list({ ...applied, page }, request.signal); if (!request.signal.aborted) data.value = response }
   catch (e) { if (!request.signal.aborted) error.value = errorMessage(e) }
   finally { if (!request.signal.aborted) loading.value = false }
 }
+async function refresh() {
+  if (!live.value || document.hidden || loading.value || pollAbort) return
+  const request = new AbortController(); pollAbort = request
+  try {
+    const response = await cdrService.list({ ...applied, page: 0, ...(currentPage > 0 ? { size: 1 } : {}) }, request.signal)
+    if (request.signal.aborted) return
+    if (currentPage === 0) { data.value = response; error.value = '' }
+    else if (data.value && response.totalElements > data.value.totalElements) newRecords.value = true
+    refreshError.value = ''
+  } catch (e) {
+    if (!request.signal.aborted) refreshError.value = `Otomatik güncelleme yapılamadı. Yeniden denenecek. ${errorMessage(e)}`
+  } finally {
+    if (pollAbort === request) pollAbort = undefined
+  }
+}
+function updatePolling() {
+  if (pollTimer !== undefined) clearInterval(pollTimer)
+  pollTimer = undefined
+  pollAbort?.abort(); pollAbort = undefined
+  if (!live.value || document.hidden) return
+  void refresh()
+  pollTimer = setInterval(() => { void refresh() }, 5000)
+}
+watch(live, updatePolling)
 function apply() {
   formError.value = ''
   if (filters.startDate && filters.endDate && new Date(filters.startDate) >= new Date(filters.endDate)) { formError.value = 'Bitiş tarihi başlangıçtan sonra olmalı.'; return }
@@ -56,13 +86,20 @@ const detailFields = computed(() => detail.value ? [
 ] : [])
 onMounted(() => {
   void load()
+  document.addEventListener('visibilitychange', updatePolling)
+  updatePolling()
   if (auth.isSuperAdmin) resourceService.all('/admin/tenants', { sort: 'name,asc' }).then(rows => { tenants.value = rows }).catch(() => { tenantError.value = 'Kurum listesi yüklenemedi. Sayfayı yenileyin.' })
 })
-onBeforeUnmount(() => { listAbort?.abort(); detailAbort?.abort() })
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', updatePolling)
+  if (pollTimer !== undefined) clearInterval(pollTimer)
+  pollAbort?.abort(); listAbort?.abort(); detailAbort?.abort()
+})
 </script>
 
 <template>
   <PageHeader title="Çağrı kayıtları" description="Aramalarınızı bulun, sonuçlarını inceleyin ve çağrı ayrıntılarına ulaşın.">
+    <label class="cdr-live-toggle"><input v-model="live" type="checkbox" />Canlı güncelleme (5 sn)</label>
     <button class="button" :disabled="loading" @click="load(data?.number || 0)"><AppIcon name="refresh" :size="16" />Yenile</button>
   </PageHeader>
   <section class="cdr-banner"><span class="cdr-icon"><AppIcon name="phone" :size="26" /></span><div><span class="cdr-eyebrow">ÇAĞRI GEÇMİŞİ</span><h2>Her görüşmenin ayrıntısı.</h2><p>Arayan, aranan, çağrı sonucu ve süre bilgilerini tek ekranda takip edin.</p></div><div class="cdr-total"><strong>{{ data ? data.totalElements.toLocaleString('tr-TR') : '—' }}</strong><span>filtreye uyan CDR kaydı</span></div></section>
@@ -80,6 +117,8 @@ onBeforeUnmount(() => { listAbort?.abort(); detailAbort?.abort() })
       <details class="cdr-advanced"><summary>Gelişmiş filtreler</summary><div><label>UniqueId<input v-model="filters.uniqueId" maxlength="150" /></label><label>LinkedId<input v-model="filters.linkedId" maxlength="150" /></label><label>Maksimum süre (sn)<input v-model="filters.maxDuration" type="number" min="0" max="2147483647" step="1" /></label></div></details>
       <div class="cdr-filter-footer"><label class="cdr-checkbox"><input v-model="filters.prefix" type="checkbox" />Numaranın başlangıcıyla eşleştir</label><div class="actions"><button class="button" type="button" @click="reset">Temizle</button><button class="button button-primary" type="submit"><AppIcon name="search" :size="16" />Filtrele</button></div></div>
     </fieldset><p v-if="formError || tenantError" class="cdr-error-text" role="alert">{{ formError || tenantError }}</p></form>
+    <div v-if="newRecords" class="cdr-live-notice" role="status"><span>Yeni kayıtlar var. İncelediğiniz sayfa korunuyor.</span><button class="button" :disabled="loading" @click="load()">Yeni kayıtları göster</button></div>
+    <p v-if="refreshError" class="cdr-live-notice" role="status">{{ refreshError }}</p>
     <div v-if="loading" class="cdr-message" role="status"><AppIcon name="refresh" /><h3>Çağrı kayıtları yükleniyor…</h3></div>
     <div v-else-if="error" class="cdr-message" role="alert"><AppIcon name="info" /><h3>Kayıtlara ulaşılamadı</h3><p>{{ error }}</p><button class="button" @click="load()">Tekrar dene</button></div>
     <template v-else-if="data">
@@ -96,5 +135,6 @@ onBeforeUnmount(() => { listAbort?.abort(); detailAbort?.abort() })
 </template>
 
 <style scoped>
+.cdr-live-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}.cdr-live-toggle input{width:16px;height:16px}.cdr-live-notice{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 22px;font-size:13px;background:var(--surface-soft);color:var(--muted)}
 .cdr-banner{display:flex;gap:20px;align-items:center;padding:28px;margin-bottom:24px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(115deg,var(--surface-soft),var(--surface))}.cdr-icon{display:grid;place-items:center;flex-shrink:0;width:54px;height:54px;border-radius:14px;background:var(--accent-soft);color:var(--accent)}.cdr-eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--accent)}.cdr-banner h2{font-size:23px;margin:5px 0;color:var(--ink)}.cdr-banner p{font-size:13px;color:var(--muted)}.cdr-total{margin-left:auto;text-align:right;white-space:nowrap}.cdr-total strong{display:block;font-size:36px;color:var(--ink)}.cdr-total span{font-size:12px;color:var(--muted)}.cdr-filters{padding:22px;border-bottom:1px solid var(--line);background:var(--surface)}.cdr-filters fieldset{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;border:0;padding:0;margin:0}.cdr-filters label{display:grid;gap:7px;font-size:12px;color:var(--muted)}.cdr-filters input,.cdr-filters select{width:100%;min-width:0;min-height:40px}.cdr-filter-footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:15px}.cdr-filters .cdr-checkbox{display:flex;flex-direction:row;align-items:center;gap:8px}.cdr-checkbox input{width:16px;min-height:16px}.cdr-advanced{grid-column:1/-1;font-size:12px;color:var(--muted)}.cdr-advanced summary{cursor:pointer}.cdr-advanced>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:15px}.cdr-message{padding:55px 24px;display:flex;align-items:center;flex-direction:column;gap:14px;text-align:center;color:var(--muted)}.cdr-message p{font-size:14px;max-width:540px}.cdr-error-text{color:var(--danger);font-size:13px;margin-top:16px}.cdr-unanswered{background:var(--warning-bg);color:var(--warning)}.cdr-failed{background:var(--danger-bg);color:var(--danger)}.cdr-time{font-variant-numeric:tabular-nums}.cdr-row{cursor:pointer}.cdr-row:hover{background:var(--surface-hover)}.cdr-guide{display:flex;align-items:flex-start;gap:10px;padding:20px 4px;color:var(--muted);font-size:12px;line-height:1.7}.cdr-guide svg{flex-shrink:0;margin-top:2px}.cdr-guide strong{color:var(--ink)}.cdr-modal{width:min(750px,calc(100vw - 32px));max-height:85vh;overflow:auto}.cdr-modal header{display:flex;justify-content:space-between;align-items:flex-start}.cdr-modal dl{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}.cdr-modal dt{font-size:11px;color:var(--muted);margin-bottom:7px}.cdr-modal dd{margin:0;font-size:13px;overflow-wrap:anywhere;color:var(--ink)}.cdr-detail-note,.cdr-limit{font-size:12px;padding-top:20px;color:var(--muted)}.cdr-limit{padding:16px 22px}.cdr-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:1100px){.cdr-filters fieldset{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.cdr-banner{padding:20px;gap:12px;flex-wrap:wrap}.cdr-banner h2{font-size:20px}.cdr-total{width:100%;text-align:left;padding-top:14px;border-top:1px solid var(--line)}.cdr-total strong{font-size:28px}.cdr-filter-footer{align-items:flex-start;flex-direction:column}.cdr-filters fieldset,.cdr-advanced>div,.cdr-modal dl{grid-template-columns:1fr}.cdr-filter-footer .actions{width:100%}.cdr-filter-footer button{flex:1}}
 </style>
