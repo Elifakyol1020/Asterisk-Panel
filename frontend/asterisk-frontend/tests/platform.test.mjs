@@ -40,6 +40,7 @@ test('Payload: backend fields only; no ID, context or response metadata', () => 
   const form = { displayName: '  Desk  ', extension: '1001', transport: 'transport-udp', codecs: 'alaw', enabled: true, password: '  long-password  ', id: 77, context: 'evil', tenantId: 99 }
   const result = buildPayload(resources.endpoints.fields, form, false, 'endpoints', true, 42)
   assert.equal(result.displayName, 'Desk'); assert.equal(result.password, '  long-password  ')
+  assert.equal(result.codecs, 'alaw,ulaw')
   assert.equal(result.tenantId, 42); assert.equal(result.id, undefined); assert.equal(result.context, undefined)
   const tenant = buildPayload(resources.endpoints.fields, form, false, 'endpoints', false, 99)
   assert.equal('tenantId' in tenant, false)
@@ -68,7 +69,7 @@ test('Password byte limit catches multi-byte Turkish characters', () => {
   assert.ok(validatePayload({ password: 'ş'.repeat(37) }, 'users').password)
 })
 test('All PBX resources have required fields; unsupported CUSTOM is excluded', () => {
-  assert.equal(pbxKeys.length, 6)
+  assert.deepEqual([...pbxKeys], ['endpoints','trunks','queues','ivrs','inbound-routes'])
   for (const key of pbxKeys) assert.ok(resources[key].fields.some(f => f.key === 'enabled'))
   assert.equal(resources.extensions.fields.find(f => f.key === 'targetType').options.includes('CUSTOM'), false)
   assert.equal(resources.tenants.api, '/admin/tenants')
@@ -113,7 +114,7 @@ test('Login service sends email/password and consumes accessToken response', asy
   assert.equal('usernameOrEmail' in request.body, false); assert.equal(response.accessToken, 'test')
 })
 
-function resourceHarness(key, { role = 'SUPER_ADMIN', form = false, id, parentId, tenantId, get, post, put, remove } = {}) {
+function resourceHarness(key, { role = 'SUPER_ADMIN', form = false, id, parentId, tenantId, get, post, put, remove, extras } = {}) {
   const route = { meta: { resource: key, form }, params: { id, parentId }, query: tenantId ? { tenantId } : {} }
   const calls = [], navigation = []
   const defaultPage = { content: [], totalElements: 0, totalPages: 0, number: 0, size: 10 }
@@ -134,7 +135,7 @@ function resourceHarness(key, { role = 'SUPER_ADMIN', form = false, id, parentId
   }
   const globals = { window: { confirm: () => true } }
   const state = form
-    ? load('src/composables/useResourceForm.ts', mocks, globals).useResourceForm(resources[key], id ? 'edit' : 'create')
+    ? load('src/composables/useResourceForm.ts', mocks, globals).useResourceForm(resources[key], id ? 'edit' : 'create', extras)
     : load('src/composables/useResourceList.ts', mocks, globals).useResourceList(resources[key])
   return { state, calls, navigation }
 }
@@ -169,6 +170,7 @@ test('Resource flow: edit loads values and uses PUT without blank password', asy
   await h.state.save()
   const call = h.calls.find(call => call[0] === 'PUT')
   assert.equal(call[1], '/endpoints/4'); assert.equal(call[2].displayName, 'Updated'); assert.equal('password' in call[2], false)
+  assert.equal(call[2].codecs, 'alaw')
 })
 test('Resource flow: nested IVR option update uses parent path and null HANGUP target', async () => {
   const h = resourceHarness('options', { role: 'TENANT_ADMIN', form: true, parentId: '9', id: '2', get: url => url === '/ivrs/9' ? { id: 9, tenantId: 7, name: 'Main' } : { content: [{ id: 2, digit: '0', actionType: 'HANGUP', targetId: null }], totalPages: 1 } })
@@ -230,6 +232,7 @@ test('PBX create, update and delete remain wired after removal of the Realtime d
     trunks: { name: 'Test trunk', host: '192.0.2.10', username: 'testuser', password: 'test-password-12' },
     queues: { name: 'support' },
     ivrs: { name: 'Main menu', audioFile: 'welcome' },
+    'inbound-routes': { name: 'Incoming', did: '+908501234567', trunkId: 5, targetType: 'ENDPOINT', targetId: 11 },
     extensions: { name: 'Reception', extensionNumber: '1002', targetType: 'ENDPOINT', targetId: 11 },
     dialplans: { extension: '1003', application: 'Answer', applicationData: '' },
   }
@@ -348,4 +351,37 @@ test('Theme: blocked browser storage does not prevent switching', () => {
   })
   useTheme().setTheme('dark')
   assert.equal(root.dataset.theme, 'dark')
+})
+
+
+test('IVR options and queue members are sent in the parent create request', async () => {
+ for (const [key, extras] of [['ivrs',{options:[{digit:'1',actionType:'ENDPOINT',targetId:11}]}],['queues',{members:[{endpointId:11,penalty:0,paused:false}]}]]) {
+  const h=resourceHarness(key,{role:'TENANT_ADMIN',form:true,extras:()=>extras});await h.state.initialize();await h.state.save();
+  const post=h.calls.find(call=>call[0]==='POST');assert.ok(post);assert.deepEqual(post[2][key==='ivrs'?'options':'members'],extras[key==='ivrs'?'options':'members']);
+  assert.equal(h.calls.filter(call=>call[0]==='POST').length,1);
+ }
+})
+
+test('Failed combined create retains child selections and stays on the form', async () => {
+ const extras={members:[{endpointId:11,penalty:0,paused:false}]};const h=resourceHarness('queues',{role:'TENANT_ADMIN',form:true,extras:()=>extras,post:()=>{throw new Error('Member rejected')}});
+ await h.state.initialize();await h.state.save();assert.equal(h.state.error.value,'Member rejected');assert.equal(h.navigation.length,0);assert.equal(extras.members.length,1);
+})
+
+
+test('Registration polling preserves unknown errors, pauses when hidden and cancels stale requests', async () => {
+ let mounted, unmounted, interval, tick, listener;
+ const requests=[];
+ const doc={hidden:false,addEventListener:(_,fn)=>listener=fn,removeEventListener:()=>listener=undefined};
+ const {useRegistrationStatus}=load('src/composables/useRegistrationStatus.ts',{
+  vue:{...vue,onMounted:fn=>mounted=fn,onBeforeUnmount:fn=>unmounted=fn},
+  '@/api/axios':{get:(_,options)=>new Promise((resolve,reject)=>requests.push({options,resolve,reject}))},
+ },{document:doc,AbortController,setInterval:(fn,ms)=>{tick=fn;interval=ms;return 1},clearInterval:()=>interval=undefined});
+ const rows=vue.ref([{id:1}]);const state=useRegistrationStatus(rows);mounted();assert.equal(interval,5000);
+ requests[0].resolve({data:{'1':'REGISTERED'}});await new Promise(resolve=>setImmediate(resolve));assert.equal(state.label(1),'Kayıtlı');
+ tick();requests[1].reject(new Error('AMI unavailable'));await new Promise(resolve=>setImmediate(resolve));assert.equal(state.label(1),'Durum alınamadı');
+ tick();const stale=requests[2];rows.value=[{id:2}];await vue.nextTick();assert.equal(stale.options.signal.aborted,true);
+ stale.resolve({data:{'1':'REGISTERED'}});requests[3].resolve({data:{'2':'UNREGISTERED'}});await new Promise(resolve=>setImmediate(resolve));assert.equal(state.label(2),'Kayıtlı değil');
+ doc.hidden=true;listener();assert.equal(interval,undefined);const count=requests.length;
+ doc.hidden=false;listener();assert.equal(requests.length,count+1);
+ unmounted();assert.equal(requests.at(-1).options.signal.aborted,true);assert.equal(interval,undefined);assert.equal(listener,undefined);
 })

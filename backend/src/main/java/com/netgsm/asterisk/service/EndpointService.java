@@ -26,9 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
 public class EndpointService {
     private final EndpointMapper mapper;
+    private final AsteriskRegistrationService registrations;
+    private final com.netgsm.asterisk.service.provisioning.AsteriskNaming naming;
     private final EndpointRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService inboundProvisioning;
     private final PasswordEncoder passwords;
     private final AsteriskEndpointProvisioningService provisioning;
 
@@ -41,6 +44,19 @@ public class EndpointService {
     @Transactional(readOnly = true)
     public EndpointResponse get(Long id) {
         return mapper.toResponse(find(id));
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<Long,String> registrationStatus(java.util.List<Long> ids) {
+        if(ids == null || ids.isEmpty() || ids.size() > 100) throw new BusinessRuleException("Select between 1 and 100 endpoints");
+        var selected = ids.stream().distinct().map(this::find).toList();
+        var contacts = registrations.registeredContacts();
+        java.util.Map<Long,String> result = new java.util.LinkedHashMap<>();
+        for(var endpoint:selected) {
+            Long expires = contacts == null ? null : contacts.get(naming.endpoint(endpoint.getTenantId(),endpoint.getExtension()));
+            result.put(endpoint.getId(), contacts == null ? "UNKNOWN" : expires != null && expires > java.time.Instant.now().getEpochSecond() ? "REGISTERED" : "UNREGISTERED");
+        }
+        return result;
     }
 
     public EndpointResponse create(CreateEndpointRequest request) {
@@ -77,6 +93,7 @@ public class EndpointService {
             provisioning.renameOrDelete(tenantId, oldExtension, oldContext);
         }
         provisioning.upsert(entity, request.password());
+        inboundProvisioning.refreshInboundTarget(tenantId, "ENDPOINT", entity.getId());
         log.info("Endpoint updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }

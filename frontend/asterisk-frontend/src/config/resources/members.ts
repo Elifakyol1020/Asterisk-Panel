@@ -1,7 +1,7 @@
 import type { ResourceConfig } from '@/types/resource';
 import { num } from './fields';
 export const queueMemberResource: ResourceConfig = {
-    key: 'members', title: 'Kuyruk üyeleri', singular: 'Kuyruk üyesi', description: 'Bu kuyruğa ait SIP endpoint’lerini yönetin.', icon: 'users', api: '', primary: 'endpointId',
+    key: 'members', title: 'Kuyruk üyeleri', singular: 'Kuyruk üyesi', description: 'Bu kuyruğa ait dahililerini yönetin.', icon: 'users', api: '', primary: 'endpointId',
     columns: [
         {
             key: 'penalty', label: 'Ceza puanı'
@@ -12,7 +12,7 @@ export const queueMemberResource: ResourceConfig = {
     ],
     fields: [
         {
-            key: 'endpointId', label: 'Endpoint', type: 'select', required: true
+            key: 'endpointId', label: 'Dahili', type: 'select', required: true
         },
         num('penalty', 'Ceza puanı', 0, 1000, 0),
         {

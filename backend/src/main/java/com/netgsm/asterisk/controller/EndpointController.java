@@ -14,6 +14,8 @@ public class EndpointController {
     private final EndpointService service;
     @io.swagger.v3.oas.annotations.Parameter(name = "sort", description = "İsteğe bağlı. Örnek: id,desc. JSON köşeli parantezleri ve tırnak kullanmayın; sıralama istemiyorsanız boş bırakın.")
     @GetMapping public Page<EndpointResponse> list(@RequestParam(required = false) Long tenantId, @ParameterObject Pageable page) { return service.list(tenantId, page); }
+    @GetMapping("/registration-status")
+    public java.util.Map<Long,String> registrationStatus(@RequestParam java.util.List<Long> ids) { return service.registrationStatus(ids); }
     @GetMapping("/{id}") public EndpointResponse get(@PathVariable Long id) { return service.get(id); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public EndpointResponse create(@Valid @RequestBody CreateEndpointRequest request) { return service.create(request); }

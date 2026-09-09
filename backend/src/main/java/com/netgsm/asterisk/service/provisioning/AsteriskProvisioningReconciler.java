@@ -27,6 +27,7 @@ public class AsteriskProvisioningReconciler implements ApplicationRunner {
     private final QueueMemberRepository queueMembers;
     private final IvrRepository ivrs;
     private final ExtensionRepository extensions;
+    private final com.netgsm.asterisk.repository.InboundRouteRepository inboundRoutes;
     private final DialplanRepository dialplans;
     private final AsteriskEndpointProvisioningService endpointProvisioning;
     private final AsteriskTrunkProvisioningService trunkProvisioning;
@@ -50,6 +51,7 @@ public class AsteriskProvisioningReconciler implements ApplicationRunner {
                 .filter(extension -> !"DIALPLAN".equals(extension.getTargetType()))
                 .forEach(dialplanProvisioning::upsertExtensionRoute);
         dialplans.findAll().forEach(dialplanProvisioning::upsertDialplan);
+        inboundRoutes.findAll().forEach(dialplanProvisioning::upsertInboundRoute);
         log.info("Asterisk Realtime provisioning reconciled with tenant-specific contexts");
     }
 

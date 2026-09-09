@@ -27,7 +27,7 @@ const {
 </script>
 
 <template>
-  <PageHeader title="Endpoint oluştur" :description="config.description">
+  <PageHeader title="Dahili oluştur" :description="config.description">
     <RouterLink :to="url(basePath)" class="button">Listeye dön</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :retry="!ready && !loading" @retry="initialize" />

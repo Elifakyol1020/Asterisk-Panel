@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import type { RecordData } from '@/api/platform'
+import CallSetupRows from '@/components/forms/CallSetupRows.vue'
 import { queueResource as config } from '@/config/resources/queues'
 import { useResourceForm } from '@/composables/useResourceForm'
 import QueueFields from '@/components/queues/QueueFields.vue'
@@ -9,6 +12,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import TenantSelect from '@/components/forms/TenantSelect.vue'
 import FormActions from '@/components/forms/FormActions.vue'
 
+const children = ref<RecordData[]>([])
 const {
   basePath,
   tenantId,
@@ -20,10 +24,11 @@ const {
   ready,
   error,
   tenantRequired,
+  scope,
   url,
   initialize,
   save,
-} = useResourceForm(config, 'create')
+} = useResourceForm(config, 'create', () => ({ members: children.value }))
 </script>
 
 <template>
@@ -44,6 +49,7 @@ const {
         </label>
         <QueueFields :form="form" :errors="validation" :disabled="saving" />
       </div>
+      <CallSetupRows v-model="children" kind="queue" :tenant-id="scope" :disabled="saving" />
       <FormActions :cancel-to="url(basePath)" :saving="saving" />
     </form>
     <aside class="form-aside">

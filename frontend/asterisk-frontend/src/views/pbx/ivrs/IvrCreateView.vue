@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import type { RecordData } from '@/api/platform'
+import CallSetupRows from '@/components/forms/CallSetupRows.vue'
 import { ivrResource as config } from '@/config/resources/ivrs'
 import { useResourceForm } from '@/composables/useResourceForm'
 import IvrFields from '@/components/ivrs/IvrFields.vue'
@@ -9,6 +12,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import TenantSelect from '@/components/forms/TenantSelect.vue'
 import FormActions from '@/components/forms/FormActions.vue'
 
+const children = ref<RecordData[]>([])
 const {
   basePath,
   tenantId,
@@ -24,7 +28,7 @@ const {
   url,
   initialize,
   save,
-} = useResourceForm(config, 'create')
+} = useResourceForm(config, 'create', () => ({ options: children.value }))
 </script>
 
 <template>
@@ -45,12 +49,13 @@ const {
         </label>
         <IvrFields :form="form" :errors="validation" :disabled="saving" :tenant-id="scope" />
       </div>
+      <CallSetupRows v-model="children" kind="ivr" :tenant-id="scope" :disabled="saving" />
       <FormActions :cancel-to="url(basePath)" :saving="saving" />
     </form>
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
       <h3>Notlar</h3>
-      <p>IVR kaydedildikten sonra düzenleme ekranındaki “Tuşlama seçenekleri” bağlantısından tuş hedeflerini tanımlayın.</p>
+      <p>Tuşlar IVR ile birlikte kaydedilir. Sonradan tuşlama seçenekleri ekranından değiştirilebilir.</p>
     </aside>
   </div>
 </template>

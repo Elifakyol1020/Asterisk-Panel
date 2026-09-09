@@ -7,7 +7,7 @@ import { useResourceContext } from './useResourceContext'
 import { useResourceTargets } from './useResourceTargets'
 import type { ResourceConfig } from '@/types/resource'
 
-export function useResourceForm(config: ResourceConfig, mode: 'create' | 'edit') {
+export function useResourceForm(config: ResourceConfig, mode: 'create' | 'edit', createExtras: () => Record<string, unknown> = () => ({})) {
   const context = useResourceContext(config)
   const { key, auth, route, router, tenantId, nested, apiPath, basePath, url } = context
   const editing = mode === 'edit'
@@ -37,13 +37,14 @@ export function useResourceForm(config: ResourceConfig, mode: 'create' | 'edit')
           : await resourceService.get(`${apiPath}/${route.params.id}`)
         if (!record) throw new Error('Düzenlenecek kayıt bulunamadı.')
         loadedRecord.value = record
+        if (key === 'endpoints') form.codecs = record.codecs
         config.fields.forEach(field => {
           if (field.key !== 'password') form[field.key] = record[field.key] ?? form[field.key]
         })
         if (record.tenantId) tenantId.value = String(record.tenantId)
       }
       await targets.loadTargets()
-      initialForm = JSON.stringify(form)
+      initialForm = JSON.stringify({ form, extras: createExtras() })
       await nextTick()
       ready.value = true
     } catch (cause) {
@@ -63,8 +64,8 @@ export function useResourceForm(config: ResourceConfig, mode: 'create' | 'edit')
     saving.value = true
     try {
       if (editing) await resourceService.update(`${apiPath}/${route.params.id}`, data)
-      else await resourceService.create(key === 'users' ? `/admin/tenants/${tenantId.value}/users` : apiPath, data)
-      initialForm = JSON.stringify(form)
+      else await resourceService.create(key === 'users' ? `/admin/tenants/${tenantId.value}/users` : apiPath, { ...data, ...createExtras() })
+      initialForm = JSON.stringify({ form, extras: createExtras() })
       await router.push({ ...url(basePath), query: { ...url(basePath).query, saved: '1' } })
     } catch (cause) {
       error.value = errorMessage(cause)
@@ -75,7 +76,7 @@ export function useResourceForm(config: ResourceConfig, mode: 'create' | 'edit')
   }
 
   onBeforeRouteLeave(() => {
-    if (ready.value && JSON.stringify(form) !== initialForm && !saving.value) {
+    if (ready.value && JSON.stringify({ form, extras: createExtras() }) !== initialForm && !saving.value) {
       return window.confirm('Kaydedilmemiş değişiklikleriniz var. Bu sayfadan ayrılmak istiyor musunuz?')
     }
   })

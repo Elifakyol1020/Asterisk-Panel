@@ -36,7 +36,7 @@ const options = computed(() => props.targets.map(target => ({
       </span>
     </template>
   </FormField>
-  <p class="form-hint full">Yalnızca bu kuyruğun tenant’ına ait SIP endpoint’leri gösterilir. Seçilen üye realtime queue_members tablosuna tenant-aware PJSIP adıyla yazılır.</p>
+  <p class="form-hint full">Yalnızca bu kuyruğun tenant’ına ait SIP dahilileri gösterilir. Seçilen üye realtime queue_members tablosuna tenant-aware PJSIP adıyla yazılır.</p>
   <FormField
     v-model="form.penalty"
     :field="fields.penalty!"

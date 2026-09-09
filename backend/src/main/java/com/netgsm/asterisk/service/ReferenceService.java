@@ -25,6 +25,7 @@ public class ReferenceService {
     private final IvrRepository ivrs;
     private final IvrOptionRepository options;
     private final ExtensionRepository extensions;
+    private final com.netgsm.asterisk.repository.InboundRouteRepository inboundRoutes;
     public void requireTarget(Long tenantId, String type, Long id) {
         if ("HANGUP".equals(type)) {
             if (id != null) throw new BusinessRuleException("HANGUP must not have a target");
@@ -43,7 +44,9 @@ public class ReferenceService {
         if (!exists) throw new ResourceNotFoundException("Target");
     }
     public void requireUnreferenced(Long tenantId, String type, Long id) {
-        boolean referenced = extensions.existsByTenantIdAndTargetTypeAndTargetId(tenantId, type, id)
+        boolean referenced = inboundRoutes.existsByTenantIdAndTargetTypeAndTargetId(tenantId, type, id)
+                || ("TRUNK".equals(type) && inboundRoutes.existsByTenantIdAndTrunkId(tenantId, id))
+                || extensions.existsByTenantIdAndTargetTypeAndTargetId(tenantId, type, id)
                 || options.existsByTenantIdAndActionTypeAndTargetId(tenantId, type, id)
                 || ("ENDPOINT".equals(type) && members.existsByTenantIdAndEndpointId(tenantId, id))
                 || ("QUEUE".equals(type) && members.existsByTenantIdAndQueueId(tenantId, id))

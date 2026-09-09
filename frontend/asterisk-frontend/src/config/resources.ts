@@ -1,3 +1,4 @@
+import { inboundRouteResource } from './resources/inbound-routes'
 import type { ResourceConfig } from '@/types/resource'
 import { tenantResource } from './resources/tenants'
 import { userResource } from './resources/users'
@@ -21,8 +22,9 @@ export const resources: Record<string, ResourceConfig> = {
   queues: queueResource,
   ivrs: ivrResource,
   extensions: extensionResource,
+  'inbound-routes': inboundRouteResource,
   dialplans: dialplanResource,
   members: queueMemberResource,
   options: ivrOptionResource,
 }
-export const pbxKeys = ['endpoints', 'trunks', 'queues', 'ivrs', 'extensions']
+export const pbxKeys = ['endpoints', 'trunks', 'queues', 'ivrs', 'inbound-routes']

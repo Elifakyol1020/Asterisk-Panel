@@ -14,7 +14,7 @@ export const dialplanResource: ResourceConfig = {
         }
     ],
     fields: [
-        text('extension', 'Dahili numarası', {
+        text('extension', 'Aranacak numara', {
             pattern: numberPattern, maxLength: 20
         }), num('priority', 'Öncelik', 1, 1000, 1), select('application', 'Uygulama', [
             'Answer', 'Hangup', 'Playback', 'Wait'

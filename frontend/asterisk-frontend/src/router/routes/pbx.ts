@@ -2,21 +2,24 @@ import type { RouteRecordRaw } from 'vue-router'
 
 // The same PBX features are available in both role scopes; each route has its own page.
 export const pbxRoutes: RouteRecordRaw[] = [
+ {path:'inbound-routes',component:()=>import('@/views/pbx/inbound/InboundRouteListView.vue'),meta:{title:'Gelen arama kuralları'}},
+ {path:'inbound-routes/create',component:()=>import('@/views/pbx/inbound/InboundRouteCreateView.vue'),meta:{title:'Gelen arama kuralı oluştur'}},
+ {path:'inbound-routes/:id/edit',component:()=>import('@/views/pbx/inbound/InboundRouteEditView.vue'),meta:{title:'Gelen arama kuralı düzenle'}},
   { path: 'cdr', component: () => import('@/views/pbx/cdr/CdrListView.vue'), meta: { title: 'Çağrı kayıtları' } },
   {
     path: 'endpoints',
     component: () => import('@/views/pbx/endpoints/EndpointListView.vue'),
-    meta: { title: 'Endpoint’ler' },
+    meta: { title: 'Dahililer' },
   },
   {
     path: 'endpoints/create',
     component: () => import('@/views/pbx/endpoints/EndpointCreateView.vue'),
-    meta: { title: 'Endpoint oluştur' },
+    meta: { title: 'Dahili oluştur' },
   },
   {
     path: 'endpoints/:id/edit',
     component: () => import('@/views/pbx/endpoints/EndpointEditView.vue'),
-    meta: { title: 'Endpoint düzenle' },
+    meta: { title: 'Dahili düzenle' },
   },
   {
     path: 'trunks',
@@ -66,17 +69,17 @@ export const pbxRoutes: RouteRecordRaw[] = [
   {
     path: 'extensions',
     component: () => import('@/views/pbx/extensions/ExtensionListView.vue'),
-    meta: { title: 'Dahililer' },
+    meta: { title: 'Arama kuralları' },
   },
   {
     path: 'extensions/create',
     component: () => import('@/views/pbx/extensions/ExtensionCreateView.vue'),
-    meta: { title: 'Dahili oluştur' },
+    meta: { title: 'Arama kuralı oluştur' },
   },
   {
     path: 'extensions/:id/edit',
     component: () => import('@/views/pbx/extensions/ExtensionEditView.vue'),
-    meta: { title: 'Dahili düzenle' },
+    meta: { title: 'Arama kuralı düzenle' },
   },
   {
     path: 'queues/:parentId/members',

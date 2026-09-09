@@ -14,13 +14,13 @@ import QuickActions from '@/components/dashboard/QuickActions.vue'
 const { loading, errors, totals, rows, updatedAt, load } = useDashboardData('endpoints', pbxKeys)
 const date = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })
 const cards = [
-  { key: 'endpoints', title: 'Endpoint’ler', icon: 'phone', to: '/tenant/endpoints' },
-  { key: 'extensions', title: 'Dahililer', icon: 'route', to: '/tenant/extensions' },
+  { key: 'endpoints', title: 'Dahililer', icon: 'phone', to: '/tenant/endpoints' },
+  { key: 'inbound-routes', title: 'Arama kuralları', icon: 'route', to: '/tenant/inbound-routes' },
   { key: 'queues', title: 'Çağrı kuyrukları', icon: 'queue', to: '/tenant/queues' },
   { key: 'ivrs', title: 'Sesli yanıt (IVR)', icon: 'mic', to: '/tenant/ivrs' },
 ]
 const quickActions = [
-  { to: '/tenant/endpoints/create', icon: 'phone', title: 'Endpoint oluştur', description: 'SIP cihazınızı ekleyin' },
+  { to: '/tenant/endpoints/create', icon: 'phone', title: 'Dahili oluştur', description: 'SIP cihazınızı ekleyin' },
   { to: '/tenant/queues/create', icon: 'queue', title: 'Kuyruk oluştur', description: 'Çağrı dağıtımını yapılandırın' },
   { to: '/tenant/ivrs/create', icon: 'mic', title: 'IVR oluştur', description: 'Karşılama anonsunu yapılandırın' },
 ]
@@ -30,7 +30,7 @@ const quickActions = [
   <div class="page-kicker">{{ date }}</div>
   <PageHeader title="Santralinize genel bakış" description="Kurumunuzun santral kaynaklarını buradan yönetin.">
     <button class="button" :disabled="loading" @click="load"><AppIcon name="refresh" :size="16" />Yenile</button>
-    <RouterLink to="/tenant/endpoints/create" class="button button-primary"><AppIcon name="plus" :size="17" />Endpoint oluştur</RouterLink>
+    <RouterLink to="/tenant/endpoints/create" class="button button-primary"><AppIcon name="plus" :size="17" />Dahili oluştur</RouterLink>
   </PageHeader>
   <div v-if="errors.length" class="form-error" role="alert">
     <strong>Bazı veriler yüklenemedi.</strong>
@@ -50,7 +50,7 @@ const quickActions = [
         </EmptyState>
         <div v-else class="table-scroll">
           <table>
-            <thead><tr><th>Endpoint</th><th>Dahili</th><th>Durum</th><th aria-label="Düzenle" /></tr></thead>
+            <thead><tr><th>Dahili adı</th><th>Dahili</th><th>Durum</th><th aria-label="Düzenle" /></tr></thead>
             <tbody>
               <tr v-for="row in rows" :key="String(row.id)">
                 <td><RecordIdentity :name="row.displayName" :id="row.id" icon="phone" /></td>

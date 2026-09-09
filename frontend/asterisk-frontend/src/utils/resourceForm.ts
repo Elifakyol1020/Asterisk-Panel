@@ -6,11 +6,13 @@ export function buildPayload(fields: Field[], form: RecordData, editing: boolean
   for (const field of fields) {
     let value = form[field.key]
     if (field.type === 'password' && editing && !value) continue
-    if (field.type === 'number' || field.key === 'targetId' || field.key === 'endpointId') value = Number(value)
+    if (field.type === 'number' || field.key === 'targetId' || field.key === 'endpointId' || field.key === 'trunkId') value = Number(value)
     else if (typeof value === 'string' && field.type !== 'password') value = value.trim()
     data[field.key] = value
   }
   if (key === 'options' && form.actionType === 'HANGUP') data.targetId = null
+  // Codec negotiation stays automatic in the UI; retain an existing device's configuration.
+  if (key === 'endpoints') data.codecs = editing && form.codecs ? form.codecs : 'alaw,ulaw'
   if (superAdmin && !['tenants', 'users', 'members', 'options'].includes(key)) data.tenantId = tenantId
   return data
 }

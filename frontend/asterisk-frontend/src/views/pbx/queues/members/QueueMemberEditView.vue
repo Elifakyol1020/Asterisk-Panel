@@ -52,7 +52,7 @@ const {
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
       <h3>Notlar</h3>
-      <p>Endpoint aynı tenant’a ait olmalıdır. Aynı endpoint bir kuyrukta yalnızca bir kez üye yapılabilir.</p>
+      <p>Dahili aynı tenant’a ait olmalıdır. Aynı dahili bir kuyrukta yalnızca bir kez üye yapılabilir.</p>
     </aside>
   </div>
 </template>

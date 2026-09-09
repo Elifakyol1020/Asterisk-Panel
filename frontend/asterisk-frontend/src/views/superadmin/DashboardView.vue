@@ -15,7 +15,7 @@ const { loading, errors, totals, rows, updatedAt, load } = useDashboardData('ten
 const date = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })
 const cards = [
   { key: 'tenants', title: 'Tenant’lar', icon: 'building', to: '/super-admin/tenants' },
-  { key: 'endpoints', title: 'Endpoint’ler', icon: 'phone', to: '/super-admin/endpoints' },
+  { key: 'endpoints', title: 'Dahililer', icon: 'phone', to: '/super-admin/endpoints' },
   { key: 'trunks', title: 'Trunk’lar', icon: 'network', to: '/super-admin/trunks' },
   { key: 'queues', title: 'Çağrı kuyrukları', icon: 'queue', to: '/super-admin/queues' },
 ]

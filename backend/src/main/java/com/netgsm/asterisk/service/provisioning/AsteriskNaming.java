@@ -39,6 +39,8 @@ public class AsteriskNaming {
         return "tenant_" + tenantId + "_internal";
     }
 
+    public String inboundContext(Long tenantId, Long trunkId) { return "tenant_" + tenantId + "_inbound_" + trunkId; }
+
     public String tenantPrefix(Long tenantId) {
         return "tenant" + tenantId;
     }

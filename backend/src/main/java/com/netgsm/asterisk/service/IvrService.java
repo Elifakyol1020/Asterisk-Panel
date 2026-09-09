@@ -27,6 +27,7 @@ public class IvrService {
     private final IvrRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final IvrOptionService options;
     private final AsteriskDialplanProvisioningService provisioning;
 
     @Transactional(readOnly = true)
@@ -48,6 +49,7 @@ public class IvrService {
 
         repository.saveAndFlush(entity);
         provisioning.recompileIvr(entity);
+        if (request.options() != null) request.options().forEach(item -> options.create(entity.getId(), item));
 
         log.info("Ivr created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
@@ -64,6 +66,7 @@ public class IvrService {
 
         repository.flush();
         provisioning.recompileIvr(entity);
+        provisioning.refreshInboundTarget(tenantId, "IVR", entity.getId());
 
         log.info("Ivr updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);

@@ -14,7 +14,7 @@ export const ivrOptionResource: ResourceConfig = {
         select('digit', 'Tuş', [
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '#'
         ]), select('actionType', 'İşlem', [
-            'QUEUE', 'EXTENSION', 'IVR', 'HANGUP'
+            'ENDPOINT', 'QUEUE', 'EXTENSION', 'IVR', 'HANGUP'
         ]),
         {
             key: 'targetId', label: 'Hedef kayıt', type: 'select', required: true

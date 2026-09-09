@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AsteriskDialplanProvisioningService {
     private final AsteriskNaming naming;
+    private final com.netgsm.asterisk.repository.InboundRouteRepository inboundRoutes;
     private final AsteriskExtensionRepository realtime;
     private final EndpointRepository endpoints;
     private final QueueRepository queues;
@@ -34,6 +35,23 @@ public class AsteriskDialplanProvisioningService {
     private final ExtensionRepository extensions;
     private final IvrOptionRepository options;
     private final AsteriskRealtimeWriter realtimeWriter;
+
+    public void refreshInboundTarget(Long tenantId, String type, Long id) {
+        inboundRoutes.findAllByTenantIdAndTargetTypeAndTargetId(tenantId, type, id).forEach(this::upsertInboundRoute);
+    }
+
+    public void deleteInboundRoute(com.netgsm.asterisk.entity.InboundRoute route) {
+        realtime.deleteAllByContextAndExten(naming.inboundContext(route.getTenantId(), route.getTrunkId()), route.getDid());
+        realtime.flush();
+    }
+    public void upsertInboundRoute(com.netgsm.asterisk.entity.InboundRoute route) {
+        deleteInboundRoute(route);
+        if (!Boolean.TRUE.equals(route.getEnabled())) return;
+        String context = naming.inboundContext(route.getTenantId(), route.getTrunkId());
+        Target destination = target(route.getTenantId(), route.getTargetType(), route.getTargetId());
+        save(context, route.getDid(), 1, destination.app(), destination.appdata());
+        if (!"Goto".equals(destination.app())) save(context, route.getDid(), 2, "Hangup", "");
+    }
 
     public void upsertDialplan(Dialplan dialplan) {
         String context = naming.tenantContext(dialplan.getTenantId());
@@ -96,7 +114,7 @@ public class AsteriskDialplanProvisioningService {
         log.info("Creating Asterisk IVR dialplan: {}/{}", context, ivrExten);
         save(context, ivrExten, 1, "Answer", "");
         save(context, ivrExten, 2, "Set", "IVR_ATTEMPTS=0");
-        save(context, ivrExten, 3, "Read", "IVR_DIGIT," + ivr.getAudioFile() + ",1,,1," + ivr.getTimeout());
+        save(context, ivrExten, 3, "Read", "IVR_DIGIT," + ivr.getAudioFile() + ",1,e,1," + ivr.getTimeout());
         save(context, ivrExten, 4, "GotoIf", "$[\"${IVR_DIGIT}\"=\"\"]?" + context + "," + ivrExten + "_invalid,1");
         save(context, ivrExten, 5, "Goto", context + "," + ivrExten + "_${IVR_DIGIT},1");
 

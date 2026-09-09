@@ -27,6 +27,8 @@ public class QueueService {
     private final QueueRepository repository;
     private final CurrentUserService current;
     private final ReferenceService references;
+    private final com.netgsm.asterisk.service.provisioning.AsteriskDialplanProvisioningService inboundProvisioning;
+    private final QueueMemberService members;
     private final AsteriskQueueProvisioningService provisioning;
 
     @Transactional(readOnly = true)
@@ -48,6 +50,7 @@ public class QueueService {
 
         repository.saveAndFlush(entity);
         provisioning.upsertQueue(entity);
+        if (request.members() != null) request.members().forEach(item -> members.create(entity.getId(), item));
         log.info("Queue created id={} tenantId={}", entity.getId(), tenantId);
         return mapper.toResponse(entity);
     }
@@ -64,6 +67,7 @@ public class QueueService {
         repository.flush();
         if (!oldName.equals(entity.getName())) provisioning.renameOrDeleteQueue(tenantId, oldName);
         provisioning.upsertQueue(entity);
+        inboundProvisioning.refreshInboundTarget(tenantId, "QUEUE", entity.getId());
         log.info("Queue updated id={} tenantId={}", id, tenantId);
         return mapper.toResponse(entity);
     }

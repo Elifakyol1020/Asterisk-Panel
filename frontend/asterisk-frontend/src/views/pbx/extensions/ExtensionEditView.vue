@@ -32,7 +32,7 @@ const {
 </script>
 
 <template>
-  <PageHeader title="Dahili düzenle" :description="config.description">
+  <PageHeader title="Arama kuralı düzenle" :description="config.description">
     <RouterLink :to="url(basePath)" class="button">Listeye dön</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :retry="!ready && !loading" @retry="initialize" />

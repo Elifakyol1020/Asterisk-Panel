@@ -61,7 +61,7 @@ async function saveFlow() {
 
 <template>
   <PageHeader title="Gelişmiş çağrı akışı" description="Bir dahili numarası için sıralı Answer, Playback, Wait ve Hangup işlemleri tanımlayın.">
-    <RouterLink :to="url(basePath.replace(/\/dialplans$/, '/extensions'))" class="button">Dahililere dön</RouterLink>
+    <RouterLink :to="url(basePath.replace(/\/dialplans$/, '/extensions'))" class="button">Arama kurallarıe dön</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :retry="!ready && !loading" @retry="initialize" />
   <EmptyState v-if="loading" loading />
@@ -72,7 +72,7 @@ async function saveFlow() {
         <label v-if="tenantRequired" class="full">Tenant *
           <TenantSelect v-model="tenantId" :tenants="tenants" required :disabled="saving" />
         </label>
-        <label>Dahili numarası *<input v-model="form.extension" required pattern="[0-9]{1,20}" /></label>
+        <label>Aranacak numara *<input v-model="form.extension" required pattern="[0-9]{1,20}" /></label>
         <label class="checkbox"><input v-model="form.enabled" type="checkbox" /> Aktif</label>
       </div>
       <h3>İşlem sırası</h3>

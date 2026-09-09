@@ -39,9 +39,9 @@ const {
 </script>
 
 <template>
-  <PageHeader title="Dahililer" :description="config.description">
+  <PageHeader title="Arama kuralları" :description="config.description">
     <button class="button" :disabled="loading" @click="initialize"><AppIcon name="refresh" :size="16" />Yenile</button>
-    <RouterLink :to="url(`${basePath}/create`)" class="button button-primary"><AppIcon name="plus" :size="16" />Dahili oluştur</RouterLink>
+    <RouterLink :to="url(`${basePath}/create`)" class="button button-primary"><AppIcon name="plus" :size="16" />Arama kuralı oluştur</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :success="success || (route.query.saved ? 'Değişiklikler başarıyla kaydedildi.' : '')" :retry="!ready && !loading" @retry="initialize" />
   <section class="panel">
@@ -53,7 +53,7 @@ const {
       v-else-if="!visibleRows.length"
       icon="route"
       :title="error ? 'Veriler yüklenemedi' : search ? 'Eşleşen kayıt yok' : 'Henüz bir kayıt yok'"
-      :description="error ? 'Bağlantınızı kontrol edip yeniden deneyin.' : search ? 'Arama yalnızca açık sayfadaki kayıtları kapsar.' : 'İlk dahili kaydınızı oluşturabilirsiniz.'"
+      :description="error ? 'Bağlantınızı kontrol edip yeniden deneyin.' : search ? 'Arama yalnızca açık sayfadaki kayıtları kapsar.' : 'İlk arama kuralınızı oluşturabilirsiniz.'"
     />
     <div v-else class="table-scroll">
       <table>

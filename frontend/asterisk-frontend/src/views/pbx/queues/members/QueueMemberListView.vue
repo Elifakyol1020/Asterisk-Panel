@@ -59,7 +59,7 @@ const {
     <div v-else class="table-scroll">
       <table>
         <thead><tr>
-          <th>Endpoint ID</th>
+          <th>Dahili ID</th>
           <th>Ceza puanı</th>
           <th>Duraklatıldı</th>
           <th class="actions-heading">İşlemler</th>

@@ -57,7 +57,7 @@ async function submit() {
   if (mode.value === 'target') { await save(); return }
   if (saving.value || !ready.value) return
   if (!scope.value) { error.value = 'Önce bir tenant seçin.'; return }
-  if (!/^\d{1,20}$/.test(String(form.extensionNumber || ''))) { error.value = 'Geçerli bir dahili numarası girin.'; return }
+  if (!/^\d{1,20}$/.test(String(form.extensionNumber || ''))) { error.value = 'Geçerli bir aranacak numara girin.'; return }
   if (steps.value.some(step => requiresData(step.application) && !step.applicationData)) {
     error.value = 'Playback ve Wait işlemleri için parametre zorunludur.'; return
   }
@@ -78,19 +78,19 @@ async function submit() {
 </script>
 
 <template>
-  <PageHeader title="Dahili oluştur" :description="config.description">
+  <PageHeader title="Arama kuralı oluştur" :description="config.description">
     <RouterLink :to="url(basePath)" class="button">Listeye dön</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :retry="!ready && !loading" @retry="initialize" />
   <EmptyState v-if="loading" loading />
   <div v-else-if="ready" class="form-layout">
     <form class="form-panel" @submit.prevent="submit">
-      <h2>Yeni dahili</h2>
+      <h2>Yeni arama kuralı</h2>
       <div class="mode-picker">
         <button type="button" class="button" :class="{ 'button-primary': mode === 'target' }" @click="mode = 'target'">Hazır hedefe yönlendir</button>
         <button type="button" class="button" :class="{ 'button-primary': mode === 'flow' }" @click="mode = 'flow'">Gelişmiş çağrı akışı</button>
       </div>
-      <p class="form-description">{{ mode === 'target' ? 'Numarayı endpoint, kuyruk, IVR veya trunk kaydına yönlendirin.' : 'Numara için sıralı Asterisk işlemleri oluşturun.' }}</p>
+      <p class="form-description">{{ mode === 'target' ? 'Numarayı dahili, kuyruk, IVR veya trunk kaydına yönlendirin.' : 'Numara için sıralı Asterisk işlemleri oluşturun.' }}</p>
       <div class="form-grid">
         <label v-if="tenantRequired" class="full">
           Tenant *
@@ -99,8 +99,8 @@ async function submit() {
         </label>
         <ExtensionFields v-if="mode === 'target'" :form="form" :errors="validation" :disabled="saving" :targets="targets" :lookup-loading="lookupLoading" :scope="scope" />
         <template v-else>
-          <label>Dahili adı *<input v-model="form.name" required maxlength="120" /></label>
-          <label>Dahili numarası *<input v-model="form.extensionNumber" required pattern="[0-9]{1,20}" /></label>
+          <label>Kural adı *<input v-model="form.name" required maxlength="120" /></label>
+          <label>Aranacak numara *<input v-model="form.extensionNumber" required pattern="[0-9]{1,20}" /></label>
           <label class="checkbox"><input v-model="form.enabled" type="checkbox" /> Aktif</label>
         </template>
       </div>

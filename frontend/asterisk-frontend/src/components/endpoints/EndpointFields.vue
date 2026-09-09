@@ -34,13 +34,6 @@ const props = defineProps<{
     :editing="editing"
   />
   <FormField
-    v-model="form.codecs"
-    :field="fields.codecs!"
-    :error="errors.codecs"
-    :disabled="disabled"
-    :editing="editing"
-  />
-  <FormField
     v-model="form.password"
     :field="fields.password!"
     :error="errors.password"

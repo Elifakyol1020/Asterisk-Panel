@@ -30,6 +30,11 @@ server:
 
 app:
   asterisk:
+    ami:
+      host: ${ASTERISK_AMI_HOST:}
+      port: ${ASTERISK_AMI_PORT:5038}
+      username: ${ASTERISK_AMI_USERNAME:}
+      secret: ${ASTERISK_AMI_SECRET:}
     sounds-path: ${ASTERISK_SOUNDS_PATH:/var/lib/asterisk/sounds}
   jwt:
     secret: ${JWT_SECRET}

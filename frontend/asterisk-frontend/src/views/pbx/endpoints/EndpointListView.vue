@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRegistrationStatus } from '@/composables/useRegistrationStatus'
 import { endpointResource as config } from '@/config/resources/endpoints'
 import { useResourceList } from '@/composables/useResourceList'
 import { displayValue } from '@/utils/display'
@@ -20,6 +21,7 @@ const {
   tenantId,
   tenants,
   visibleRows,
+  rows,
   loading,
   deleting,
   ready,
@@ -36,12 +38,13 @@ const {
   remove,
   changePage,
 } = useResourceList(config)
+const registration = useRegistrationStatus(rows)
 </script>
 
 <template>
-  <PageHeader title="Endpoint’ler" :description="config.description">
+  <PageHeader title="Dahililer" :description="config.description">
     <button class="button" :disabled="loading" @click="initialize"><AppIcon name="refresh" :size="16" />Yenile</button>
-    <RouterLink :to="url(`${basePath}/create`)" class="button button-primary"><AppIcon name="plus" :size="16" />Endpoint oluştur</RouterLink>
+    <RouterLink :to="url(`${basePath}/create`)" class="button button-primary"><AppIcon name="plus" :size="16" />Dahili oluştur</RouterLink>
   </PageHeader>
   <InlineFeedback :error="error" :success="success || (route.query.saved ? 'Değişiklikler başarıyla kaydedildi.' : '')" :retry="!ready && !loading" @retry="initialize" />
   <section class="panel">
@@ -53,7 +56,7 @@ const {
       v-else-if="!visibleRows.length"
       icon="phone"
       :title="error ? 'Veriler yüklenemedi' : search ? 'Eşleşen kayıt yok' : 'Henüz bir kayıt yok'"
-      :description="error ? 'Bağlantınızı kontrol edip yeniden deneyin.' : search ? 'Arama yalnızca açık sayfadaki kayıtları kapsar.' : 'İlk endpoint kaydınızı oluşturabilirsiniz.'"
+      :description="error ? 'Bağlantınızı kontrol edip yeniden deneyin.' : search ? 'Arama yalnızca açık sayfadaki kayıtları kapsar.' : 'İlk dahili kaydınızı oluşturabilirsiniz.'"
     />
     <div v-else class="table-scroll">
       <table>
@@ -61,7 +64,8 @@ const {
           <th>Kayıt</th>
           <th>Dahili</th>
           <th>Transport</th>
-          <th>Durum</th>
+          <th>Aktiflik</th>
+          <th>SIP kayıt durumu</th>
           <th v-if="auth.isSuperAdmin">Tenant</th>
           <th class="actions-heading">İşlemler</th>
         </tr></thead>
@@ -71,6 +75,7 @@ const {
             <td>{{ displayValue(row.extension, 'extension') }}</td>
             <td>{{ displayValue(row.transport, 'transport') }}</td>
             <td><StatusBadge :value="row.enabled" field="enabled" /></td>
+            <td><span class="badge" :class="{neutral:registration.statuses.value[String(row.id)] !== 'REGISTERED'}">{{ registration.label(row.id) }}</span></td>
             <td v-if="auth.isSuperAdmin">#{{ row.tenantId }}</td>
             <td><div class="actions">
               <RouterLink :to="url(`${basePath}/${row.id}/edit`)" class="icon-button" :aria-label="`${row.displayName} düzenle`"><AppIcon name="edit" :size="17" /></RouterLink>

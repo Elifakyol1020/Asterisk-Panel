@@ -19,7 +19,7 @@ export const resourceService = {
     return (await api.get<RecordData>(path)).data
   },
 
-  async create(path: string, data: RecordData) {
+  async create(path: string, data: Record<string, unknown>) {
     return (await api.post<RecordData>(path, data)).data
   },
 

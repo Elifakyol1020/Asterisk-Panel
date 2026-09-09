@@ -2,6 +2,8 @@
 
 PostgreSQL tabanlı çağrı geçmişi için [CDR kurulumu, mimari, güvenlik ve curl örnekleri](docs/CDR.md).
 
+Gelen arama kuralları, canlı SIP kayıt durumu, IVR tuşları ve kuyruk üyeleri için [PBX kurulum ve geçiş notları](docs/PBX-CALL-SETUP.md).
+
 ## Proje dizini
 
 ```text

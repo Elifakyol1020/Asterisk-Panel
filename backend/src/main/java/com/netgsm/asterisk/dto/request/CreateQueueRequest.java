@@ -8,6 +8,7 @@ public record CreateQueueRequest(Long tenantId,
         @NotNull @Min(0) @Max(3600) Integer wrapupTime,
         @NotNull @Min(0) @Max(100000) Integer maxLength,
         @NotBlank @Pattern(regexp = "[a-zA-Z0-9_-]{1,80}") String musicOnHold,
-        @NotNull Boolean enabled) {
+        @NotNull Boolean enabled,
+        @Size(max = 100) java.util.List<@jakarta.validation.Valid @NotNull QueueMemberRequest> members) {
     @Override public String toString() { return "CreateQueueRequest[REDACTED]"; }
 }

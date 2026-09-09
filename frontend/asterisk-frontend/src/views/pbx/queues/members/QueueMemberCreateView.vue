@@ -52,7 +52,7 @@ const {
     <aside class="form-aside">
       <AppIcon name="shield" :size="25" />
       <h3>Notlar</h3>
-      <p>Kuyruk tenantı: #{{ parent?.tenantId }}. Başka tenantların endpoint’leri bu listede gösterilmez ve API tarafından da reddedilir.</p>
+      <p>Kuyruk tenantı: #{{ parent?.tenantId }}. Başka tenantların dahilileri bu listede gösterilmez ve API tarafından da reddedilir.</p>
     </aside>
   </div>
 </template>
