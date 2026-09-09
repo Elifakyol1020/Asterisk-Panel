@@ -31,6 +31,7 @@ public class AsteriskEndpointProvisioningService {
         String authId = naming.endpointAuth(endpoint.getTenantId(), endpoint.getExtension());
         String context = naming.tenantContext(endpoint.getTenantId());
         String realtimeExten = endpoint.getExtension();
+        migrateLegacyIdentity(endpoint, id, authId);
         log.info("Creating Asterisk endpoint: {}", id);
 
         dialplan.deleteAllByContextAndExten("realtime", id);
@@ -74,6 +75,27 @@ public class AsteriskEndpointProvisioningService {
             saveDialplan(context, realtimeExten, 2, "Dial", "PJSIP/" + id + ",20");
             saveDialplan(context, realtimeExten, 3, "Hangup", "");
         }
+    }
+
+    private void migrateLegacyIdentity(Endpoint endpoint, String id, String authId) {
+        String legacy = naming.tenantPrefix(endpoint.getTenantId()) + "_" + naming.safe(endpoint.getExtension());
+        if (!endpoints.existsById(legacy) && !auths.existsById(legacy + "_auth")) return;
+        if (endpoints.existsById(id) || auths.existsById(authId) || aors.existsById(id)) {
+            throw new IllegalStateException("Both legacy and new SIP identities exist for endpoint " + endpoint.getId());
+        }
+        auths.findById(legacy + "_auth").ifPresent(old -> {
+            PsAuth migrated = new PsAuth();
+            migrated.setId(authId);
+            migrated.setUsername(id);
+            migrated.setAuthType(old.getAuthType());
+            migrated.setPassword(old.getPassword());
+            realtimeWriter.upsertAuth(migrated);
+        });
+        queueMembers.deleteAllByStateInterface("PJSIP/" + legacy);
+        endpoints.deleteById(legacy);
+        auths.deleteById(legacy + "_auth");
+        aors.deleteById(legacy);
+        dialplan.deleteAllByContextAndExten("realtime", legacy);
     }
 
     public void renameOrDelete(Long tenantId, String oldExtension, String context) {

@@ -7,7 +7,9 @@ import com.netgsm.asterisk.entity.Endpoint;
 import org.springframework.stereotype.Component;
 
 @Component
+@lombok.RequiredArgsConstructor
 public class EndpointMapper {
+    private final com.netgsm.asterisk.service.provisioning.AsteriskNaming naming;
 
     public Endpoint toEntity(CreateEndpointRequest request, Long tenantId) {
         Endpoint entity = new Endpoint();
@@ -39,6 +41,7 @@ public class EndpointMapper {
                 entity.getEnabled(),
                 entity.getContext(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt());
+                entity.getUpdatedAt(),
+                naming.endpoint(entity.getTenantId(), entity.getExtension()));
     }
 }

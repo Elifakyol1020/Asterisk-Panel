@@ -46,10 +46,11 @@ test('Payload: backend fields only; no ID, context or response metadata', () => 
   assert.equal('tenantId' in tenant, false)
 })
 test('Santral number preserves leading zeros and rejects non-digit input', () => {
-  const data = buildPayload(resources.tenants.fields, { name: 'Example', code: ' 008503024105 ', status: 'ACTIVE' }, false, 'tenants', true)
-  assert.equal(data.code, '008503024105')
+  const data = buildPayload(resources.tenants.fields, { name: 'Example', code: ' 001234 ', status: 'ACTIVE' }, false, 'tenants', true)
+  assert.equal(data.code, '001234')
   assert.equal(validatePayload(data, 'tenants').code, undefined)
-  for (const code of ['', 'acme', '+90123', '12 34', '1'.repeat(49)]) assert.ok(validatePayload({ code }, 'tenants').code)
+  for (const code of ['1234', '12345', '123456']) assert.equal(validatePayload({ code }, 'tenants').code, undefined)
+  for (const code of ['', '123', '1234567', 'acme', '+90123', '12 34', '1'.repeat(49)]) assert.ok(validatePayload({ code }, 'tenants').code)
 })
 test('Update: empty password is omitted, not sent as an empty string', () => {
   assert.equal('password' in buildPayload(resources.users.fields, { password: '' }, true, 'users', true, 3), false)

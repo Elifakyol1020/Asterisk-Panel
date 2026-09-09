@@ -54,7 +54,7 @@ public class TenantService {
     public TenantResponse update(Long id, TenantRequest request) {
         Tenant tenant = find(id);
         String code = normalizeCode(request.code());
-        if (tenant.getCode().matches("[0-9]{1,48}") && !tenant.getCode().equals(code)) {
+        if (!tenant.getCode().equals(code)) {
             throw new PlatformException(400, "TENANT_NUMBER_IMMUTABLE", "Santral numarası değiştirilemez");
         }
         if (repository.existsByCodeAndIdNot(code, id)) throw new DuplicateResourceException("Tenant code");
@@ -75,8 +75,8 @@ public class TenantService {
 
     private String normalizeCode(String value) {
         String normalized = value == null ? "" : value.trim();
-        if (!normalized.matches("[0-9]{1,48}")) {
-            throw new PlatformException(400, "INVALID_TENANT_CODE", "Santral numarası 1–48 rakamdan oluşmalıdır");
+        if (!normalized.matches("[0-9]{4,6}")) {
+            throw new PlatformException(400, "INVALID_TENANT_CODE", "Santral numarası 4–6 rakamdan oluşmalıdır");
         }
         return normalized;
     }

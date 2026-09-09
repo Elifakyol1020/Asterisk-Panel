@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS platform.tenants (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     name VARCHAR(120) NOT NULL,
-    code VARCHAR(48) NOT NULL UNIQUE,
+    code VARCHAR(48) NOT NULL UNIQUE CONSTRAINT tenants_number_format CHECK (code ~ '^[0-9]{4,6}$'),
     status VARCHAR(16) NOT NULL CHECK (status IN ('ACTIVE', 'INACTIVE'))
 );
 CREATE TABLE IF NOT EXISTS platform.users (

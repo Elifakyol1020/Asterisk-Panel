@@ -15,7 +15,7 @@ export const tenantResource: ResourceConfig = {
     ],
     fields: [
         text('name', 'Kurum adı'), text('code', 'Santral numarası', {
-            maxLength: 48, pattern: '[0-9]{1,48}', hint: 'Benzersiz santral numarası. Yalnızca rakam girin; kaydedildikten sonra değiştirilemez.'
+            maxLength: 6, pattern: '[0-9]{4,6}', hint: 'Benzersiz santral numarası. Yalnızca rakam girin; kaydedildikten sonra değiştirilemez.'
         }), select('status', 'Durum', [
             'ACTIVE', 'INACTIVE'
         ])

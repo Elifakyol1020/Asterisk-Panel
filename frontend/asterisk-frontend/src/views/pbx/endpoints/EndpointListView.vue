@@ -62,7 +62,7 @@ const registration = useRegistrationStatus(rows)
       <table>
         <thead><tr>
           <th>Kayıt</th>
-          <th>Dahili</th>
+          <th>Dahili</th><th>SIP kullanıcı adı</th>
           <th>Transport</th>
           <th>Aktiflik</th>
           <th>SIP kayıt durumu</th>
@@ -72,7 +72,7 @@ const registration = useRegistrationStatus(rows)
         <tbody>
           <tr v-for="row in visibleRows" :key="String(row.id)">
             <td><RecordIdentity :name="row.displayName" :id="row.id" icon="phone" /></td>
-            <td>{{ displayValue(row.extension, 'extension') }}</td>
+            <td>{{ displayValue(row.extension, 'extension') }}</td><td>{{ row.sipUsername }}</td>
             <td>{{ displayValue(row.transport, 'transport') }}</td>
             <td><StatusBadge :value="row.enabled" field="enabled" /></td>
             <td><span class="badge" :class="{neutral:registration.statuses.value[String(row.id)] !== 'REGISTERED'}">{{ registration.label(row.id) }}</span></td>

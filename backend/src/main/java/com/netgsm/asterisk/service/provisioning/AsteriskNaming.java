@@ -5,9 +5,17 @@ import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 @Component
+@lombok.RequiredArgsConstructor
 public class AsteriskNaming {
+    private final com.netgsm.asterisk.repository.TenantRepository tenants;
+
     public String endpoint(Long tenantId, String extension) {
-        return tenantPrefix(tenantId) + "_" + safe(extension);
+        var tenant = tenants.findById(tenantId).orElseThrow(() ->
+                new com.netgsm.asterisk.exception.ResourceNotFoundException("Tenant"));
+        if (!tenant.getCode().matches("[0-9]{4,6}")) {
+            throw new com.netgsm.asterisk.exception.BusinessRuleException("Tenant numarası için 005 migration uygulanmalıdır");
+        }
+        return extension + "-" + tenant.getCode();
     }
 
     public String endpointAuth(Long tenantId, String extension) {

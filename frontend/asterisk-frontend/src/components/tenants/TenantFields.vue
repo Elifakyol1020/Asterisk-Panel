@@ -11,7 +11,7 @@ const props = defineProps<{
 }>()
 
 // The edit view mounts after loading the persisted record.
-const numberLocked = Boolean(props.editing && /^[0-9]{1,48}$/.test(String(props.form.code ?? '')))
+const numberLocked = Boolean(props.editing && /^[0-9]{4,6}$/.test(String(props.form.code ?? '')))
 </script>
 
 <template>

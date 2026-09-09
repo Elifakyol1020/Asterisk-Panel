@@ -18,7 +18,7 @@ export function buildPayload(fields: Field[], form: RecordData, editing: boolean
 }
 export function validatePayload(data: RecordData, key: string): Record<string, string> {
   const errors: Record<string, string> = {}
-  if (key === 'tenants' && !/^[0-9]{1,48}$/.test(String(data.code ?? ''))) errors.code = 'Santral numarası 1–48 rakamdan oluşmalıdır.'
+  if (key === 'tenants' && !/^[0-9]{4,6}$/.test(String(data.code ?? ''))) errors.code = 'Santral numarası 4–6 rakamdan oluşmalıdır.'
   if (data.password && new TextEncoder().encode(String(data.password)).length > 72) errors.password = 'Şifre en fazla 72 UTF-8 byte olabilir.'
   if (key === 'dialplans') {
     const value = String(data.applicationData || '')
