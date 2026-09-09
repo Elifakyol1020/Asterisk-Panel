@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import { pbxRoutes } from './pbx'
 
 export const superadminRoutes: RouteRecordRaw[] = [
+  { path: 'pjsip-global', component: () => import('@/views/superadmin/PjsipGlobalView.vue'), meta: { title: 'PJSIP global ayarları' } },
   { path: '', redirect: '/super-admin/dashboard' },
   {
     path: 'dashboard',

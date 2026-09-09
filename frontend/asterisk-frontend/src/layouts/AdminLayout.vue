@@ -16,6 +16,7 @@ const groups = computed(() => [
   { title: 'GENEL', items: items.value.slice(0, 2) },
   ...(auth.isSuperAdmin ? [{ title: 'ORGANİZASYON', items: items.value.slice(2, 4) }] : []),
   { title: 'SANTRAL', items: items.value.slice(auth.isSuperAdmin ? 4 : 2) },
+  ...(auth.isSuperAdmin ? [{ title: 'SİSTEM', items: [{ title: 'PJSIP global ayarları', path: '/super-admin/pjsip-global', icon: 'shield' }] }] : []),
 ])
 watch(() => route.fullPath, () => { mobileOpen.value = false })
 function logout() { auth.logout(); router.replace('/login') }

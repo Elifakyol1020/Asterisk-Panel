@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
-/** Reads live contacts, rather than treating an enabled device as registered. */
 @Service
 public class AsteriskRegistrationService {
  @Value("${app.asterisk.ami.host:}") private String host;
